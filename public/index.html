@@ -1,0 +1,3924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenCode Chat - 多人协作聊天</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .card h2 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #fff;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #666;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background: #444;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #555;
+        }
+        .btn-danger {
+            background: #666;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #777;
+        }
+        .btn-secondary {
+            background: #555;
+            color: #fff;
+        }
+        .btn-secondary:hover {
+            background: #666;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-connected {
+            background: #44444433;
+            color: #aaa;
+        }
+        .status-disconnected {
+            background: #33333333;
+            color: #fff;
+        }
+        .status-connecting {
+            background: #55555533;
+            color: #999;
+        }
+        .upload-area {
+            border: 2px dashed #444;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #666;
+            background: #33333333;
+        }
+        .file-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #333;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+        .file-icon {
+            font-size: 32px;
+        }
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-name {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #fff;
+        }
+        .file-size {
+            font-size: 12px;
+            color: #fff;
+        }
+        .file-download {
+            color: #aaa;
+            text-decoration: none;
+            padding: 6px 12px;
+            background: #333;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+        .file-download:hover {
+            background: #555;
+            color: #fff;
+        }
+        .chat-container {
+            height: 400px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+        /* 聊天布局 - 主区域 + 侧边栏 */
+        .chat-layout {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .chat-main {
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-main .chat-container {
+            margin-bottom: 0;
+        }
+        .chat-sidebar {
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sidebar-section {
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            background: #333;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #fff;
+            border-bottom: 1px solid #444;
+        }
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            max-height: 200px;
+        }
+        .sidebar-empty {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+            padding: 20px 10px;
+        }
+        .sidebar-item {
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            background: #2a2a2a;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            border-left: 3px solid transparent;
+        }
+        .sidebar-item:hover {
+            background: #333;
+            border-left-color: #666;
+        }
+        .sidebar-item-mention {
+            border-left-color: #fff;
+        }
+        .sidebar-item-ai {
+            border-left-color: #aaa;
+        }
+        .sidebar-item-sender {
+            font-weight: bold;
+            color: #aaa;
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+        .sidebar-item-preview {
+            color: #fff;
+            line-height: 1.4;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .sidebar-item-time {
+            color: #666;
+            font-size: 10px;
+            margin-top: 4px;
+        }
+        /* AI消息折叠样式 */
+        .ai-content-collapsed {
+            position: relative;
+        }
+        .ai-content-preview {
+            display: inline;
+        }
+        .ai-content-full {
+            display: none;
+        }
+        .ai-content-expanded .ai-content-preview {
+            display: none;
+        }
+        .ai-content-expanded .ai-content-full {
+            display: block;
+        }
+        .ai-expand-btn {
+            color: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+            text-decoration: underline;
+        }
+        .ai-expand-btn:hover {
+            color: #aaa;
+        }
+        /* 移动端响应式布局 */
+        @media (max-width: 768px) {
+            .chat-layout {
+                flex-direction: column;
+            }
+            .chat-sidebar {
+                width: 100%;
+                flex-direction: row;
+                gap: 10px;
+            }
+            .sidebar-section {
+                flex: 1;
+                min-width: 0;
+            }
+            .sidebar-content {
+                max-height: 150px;
+            }
+            .chat-main .chat-container {
+                height: 300px;
+            }
+            .chat-container {
+                height: 300px;
+            }
+        }
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message-own {
+            background: #44444444;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .message-other {
+            background: #33333344;
+            border-bottom-left-radius: 4px;
+        }
+        .message-ai {
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-bottom-left-radius: 4px;
+            max-width: 90%;
+        }
+        .message-ai .message-header {
+            color: #fff;
+            font-weight: bold;
+        }
+        .message-ai .message-content {
+            line-height: 1.6;
+        }
+        .message-ai .message-content code {
+            background: #2a2a2a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .message-ai .message-content pre {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .message-ai .message-content pre code {
+            background: transparent;
+            padding: 0;
+        }
+        .message-system {
+            background: #44444433;
+            text-align: center;
+            margin: 10px auto;
+            font-size: 12px;
+            color: #fff;
+        }
+        .message-header {
+            font-size: 12px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .mention {
+            color: #aaa;
+            font-weight: bold;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .input-group input {
+            flex: 1;
+        }
+        .participants {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .participant {
+            background: #333;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .participant-role {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .role-owner { background: #888; }
+        .role-admin { background: #666; }
+        .role-member { background: #555; }
+        .role-guest { background: #888; }
+        .log {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #fff;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+        .log-time {
+            color: #666;
+        }
+        .hidden {
+            display: none;
+        }
+        .flex {
+            display: flex;
+            gap: 10px;
+        }
+        .flex-1 {
+            flex: 1;
+        }
+        .load-more-container {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .load-more-btn {
+            background: #333;
+            color: #aaa;
+            border: 1px solid #555;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .load-more-btn:hover:not(:disabled) {
+            background: #444;
+            color: #fff;
+        }
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #444;
+            border-top: 2px solid #888;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .history-divider {
+            text-align: center;
+            padding: 10px;
+            margin: 15px 0;
+            border-top: 1px solid #444;
+            border-bottom: 1px solid #444;
+            color: #fff;
+            font-size: 12px;
+            background: #2a2a2a;
+        }
+    </style>
+    <!-- QRCode.js 用于生成二维码 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenCode Multiplayer</h1>
+        <p class="subtitle">多人实时协作聊天室 | @AI 智能助手 | 文件分享</p>
+
+        <!-- 连接配置 -->
+        <div class="card" id="config-card">
+            <h2>连接配置</h2>
+            <div class="flex">
+                <div class="form-group flex-1">
+                    <label>服务器地址</label>
+                    <input type="text" id="server-url" value="" placeholder="自动检测">
+                </div>
+                <div class="form-group flex-1">
+                    <label>会话 ID</label>
+                    <input type="text" id="session-id" value="test-session" placeholder="session-id">
+                </div>
+            </div>
+            <!-- 用户名单独一行 -->
+            <div class="form-group">
+                <label>用户名 <span style="color: #fff;">*</span></label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="user-name" value="" placeholder="请输入用户名" style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="generateRandomName()" title="随机生成" style="white-space: nowrap;">🎲 随机</button>
+                </div>
+            </div>
+            <div class="flex">
+                <div class="form-group flex-1">
+                    <label>角色</label>
+                    <select id="user-role" onchange="onRoleChange()">
+                        <option value="owner">Owner</option>
+                        <option value="admin">Admin</option>
+                        <option value="member" selected>Member</option>
+                        <option value="guest">Guest</option>
+                    </select>
+                </div>
+                <div class="form-group flex-1">
+                    <label>Supabase Token (可选，用于认证)</label>
+                    <input type="text" id="auth-token" placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...">
+                </div>
+            </div>
+            <!-- 角色密码输入框（仅Owner和Admin显示） -->
+            <div class="form-group hidden" id="role-password-group">
+                <label style="color: #fff;">角色密码 <span style="color: #666; font-size: 12px;">(Owner/Admin创建带密码房间需要)</span></label>
+                <input type="password" id="role-password" placeholder="请输入角色密码">
+            </div>
+            <hr style="border-color: #444; margin: 20px 0;">
+            <p style="color: #fff; font-size: 12px; margin-bottom: 10px;">创建聊天室时设置密码问题（可选，仅Owner和Admin可设置）</p>
+            <div class="flex">
+                <div class="form-group flex-1">
+                    <label>密码问题（可选）</label>
+                    <input type="text" id="password-question" placeholder="例如：今天的日期是？">
+                </div>
+                <div class="form-group flex-1">
+                    <label>密码答案（可选）</label>
+                    <input type="text" id="password-answer" placeholder="设置进入聊天室的密码答案">
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="connect()">连接</button>
+                <button class="btn btn-danger hidden" id="disconnect-btn" onclick="disconnect()">断开</button>
+                <span class="status status-disconnected" id="connection-status">未连接</span>
+            </div>
+        </div>
+
+        <!-- 密码验证界面 -->
+        <div class="card hidden" id="password-card">
+            <h2>输入密码答案</h2>
+            <p style="color: #fff; margin-bottom: 15px;">此聊天室需要密码才能进入</p>
+            <div class="form-group">
+                <label>密码问题</label>
+                <div id="password-question-display" style="padding: 10px; background: #1a1a1a; border-radius: 8px; border: 1px solid #333; color: #fff;"></div>
+            </div>
+            <div class="form-group">
+                <label>你的答案</label>
+                <input type="text" id="password-answer-input" placeholder="请输入答案...">
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="submitPassword()">提交答案</button>
+                <button class="btn btn-danger" onclick="disconnect()">取消</button>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div class="card hidden" id="chat-card">
+            <h2 style="margin: 0;">聊天室 <span id="room-name"></span></h2>
+
+            <div class="participants" id="participants">
+                <!-- 参与者列表 -->
+            </div>
+
+            <div class="chat-layout">
+                <!-- 左侧：聊天区域 -->
+                <div class="chat-main">
+                    <div class="chat-container" id="chat-container">
+                        <div class="load-more-container" id="load-more-container" style="display: none;">
+                            <button class="load-more-btn" id="load-more-btn" onclick="loadMoreHistory()">
+                                加载更多历史消息
+                            </button>
+                        </div>
+                        <!-- 消息列表 -->
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" id="message-input" placeholder="输入消息... 使用 @ai @all 提及" onkeypress="handleKeyPress(event)">
+                        <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-secondary" onclick="sendMention('@ai')">@AI</button>
+                        <button class="btn btn-secondary" onclick="sendMention('@all')">@All</button>
+                        <input type="file" id="file-input" style="display: none;" onchange="handleFileSelect(event)">
+                        <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">选择文件</button>
+                        <button class="btn btn-secondary" onclick="summarizeChat()">总结聊天</button>
+                        <button class="btn btn-secondary" onclick="clearAIMemory()">清空AI记忆</button>
+                        <button class="btn btn-secondary" onclick="clearChat()">清空</button>
+                    </div>
+                </div>
+
+                <!-- 右侧：@提及和AI回复区域 -->
+                <div class="chat-sidebar">
+                    <!-- 上部：@提及消息 -->
+                    <div class="sidebar-section">
+                        <div class="sidebar-header">@提及消息</div>
+                        <div class="sidebar-content" id="mentions-list">
+                            <div class="sidebar-empty">暂无@提及消息</div>
+                        </div>
+                    </div>
+                    <!-- 下部：AI回复 -->
+                    <div class="sidebar-section">
+                        <div class="sidebar-header">AI回复</div>
+                        <div class="sidebar-content" id="ai-responses-list">
+                            <div class="sidebar-empty">暂无AI回复</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 语音聊天控制栏 -->
+            <div id="voice-chat-panel" style="margin-top: 15px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px solid #333;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <div style="font-weight: bold; color: #fff;">
+                        🎙️ 语音聊天
+                        <span id="voice-status" class="status status-disconnected" style="margin-left: 10px;">未连接</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" id="btn-voice-join" onclick="joinVoiceChat()">加入语音</button>
+                        <button class="btn btn-danger hidden" id="btn-voice-leave" onclick="leaveVoiceChat()">离开语音</button>
+                        <button class="btn btn-secondary" id="btn-voice-ai" onclick="voiceAIAnalyze()" disabled>🤖 AI分析</button>
+                    </div>
+                </div>
+                <div id="voice-https-warning" style="color: #fff; font-size: 12px; margin-bottom: 10px; padding: 8px; background: #33333333; border-radius: 4px;">
+                    ⚠️ 安卓浏览器需要使用 HTTPS 才能访问麦克风。请使用 https:// 访问此页面。
+                </div>
+                <div id="voice-https-ok" style="display: none; color: #666; font-size: 12px; margin-bottom: 10px; padding: 8px; background: #66620; border-radius: 4px;">
+                    ✅ 已使用 HTTPS，语音功能完全可用
+                </div>
+                <div id="voice-participants" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                    <!-- 语音参与者列表 -->
+                </div>
+                <div id="voice-transcript-area" style="max-height: 150px; overflow-y: auto; background: #2a2a2a; border-radius: 8px; padding: 10px; margin-bottom: 10px; display: none;">
+                    <div style="font-size: 12px; color: #fff; margin-bottom: 5px;">实时转录</div>
+                    <div id="voice-transcript-content"></div>
+                </div>
+                <div id="voice-controls" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="vad-indicator" style="display: flex; align-items: center; gap: 8px;">
+                            <span id="vad-status-dot" style="display: inline-block; width: 12px; height: 12px; background: #888; border-radius: 50%; transition: all 0.3s;"></span>
+                            <span id="vad-status-text" style="color: #fff; font-size: 14px;">未检测到语音</span>
+                        </div>
+                        <div id="voice-speaking-indicator" style="display: none;">
+                            <span style="display: inline-block; width: 12px; height: 12px; background: #666; border-radius: 50%; animation: pulse 1s infinite;"></span>
+                            <span style="color: #fff; margin-left: 5px;">正在识别...</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 10px; color: #666; font-size: 12px;">
+                        💡 加入语音后自动持续采集，检测到语音自动开始识别
+                    </div>
+                </div>
+                <div id="voice-error" style="color: #fff; font-size: 12px; margin-top: 10px; display: none;"></div>
+            </div>
+            <style>
+                @keyframes pulse {
+                    0% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(1.2); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                .voice-participant {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    padding: 4px 10px;
+                    background: #2a2a2a;
+                    border-radius: 20px;
+                    font-size: 12px;
+                }
+                .voice-participant.speaking {
+                    background: #44444444;
+                    border: 1px solid #666;
+                }
+                .voice-transcript-item {
+                    padding: 5px 0;
+                    border-bottom: 1px solid #333;
+                    font-size: 13px;
+                }
+                .voice-transcript-item:last-child {
+                    border-bottom: none;
+                }
+                .voice-transcript-speaker {
+                    color: #fff;
+                    font-weight: bold;
+                }
+                .voice-transcript-text {
+                    color: #fff;
+                }
+                .voice-transcript-final {
+                    opacity: 0.8;
+                }
+            </style>
+            <div id="summary-display" style="margin-top: 10px; display: none; padding: 10px; background: #2a2a2a; border-radius: 8px; border-left: 3px solid #666;">
+                <div style="font-weight: bold; color: #fff; margin-bottom: 5px;">对话总结</div>
+                <div id="summary-content" style="font-size: 13px; line-height: 1.5; color: #ccc;"></div>
+            </div>
+            <div id="upload-progress" style="margin-top: 10px; display: none;">
+                <div style="background: #333; border-radius: 4px; height: 20px; overflow: hidden;">
+                    <div id="upload-bar" style="background: #666; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                <span id="upload-status" style="font-size: 12px; color: #fff;"></span>
+            </div>
+        </div>
+
+        <!-- 文件下载栏 -->
+        <div class="card">
+            <h2>📁 文件下载中心</h2>
+            <div style="margin-bottom: 15px;">
+                <button class="btn btn-secondary" onclick="refreshFileList()">🔄 刷新文件列表</button>
+                <button class="btn btn-secondary" onclick="listAIFiles()">🤖 AI生成文件</button>
+                <button class="btn btn-secondary" onclick="listSharedFiles()">📎 共享文件</button>
+                <button class="btn btn-secondary hidden" id="btn-manage-files" onclick="listSessionFilesForManage()">🔧 管理文件</button>
+            </div>
+            <div id="file-list-container" style="max-height: 300px; overflow-y: auto; background: #1a1a1a; border-radius: 8px; padding: 10px;">
+                <div style="color: #fff; text-align: center; padding: 20px;">
+                    点击"刷新文件列表"查看可下载的文件
+                </div>
+            </div>
+        </div>
+
+        <!-- 调试日志 -->
+        <div class="card">
+            <h2>调试日志</h2>
+            <div class="log" id="log-container">
+                <div class="log-entry"><span class="log-time">[系统]</span> 页面已加载，等待连接...</div>
+            </div>
+            <button class="btn btn-secondary" onclick="clearLog()" style="margin-top: 10px;">清空日志</button>
+        </div>
+
+        <!-- 邀请二维码 -->
+        <div class="card" id="invite-section">
+            <h2>📱 邀请好友</h2>
+            <div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+                <div style="text-align: center;">
+                    <div id="qrcode" style="margin-bottom: 8px;"></div>
+                    <div style="font-size: 11px; color: #fff;">扫码加入聊天室</div>
+                </div>
+                <div style="text-align: left;">
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 13px; color: #aaa; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <input type="checkbox" id="include-password" style="vertical-align: middle;">
+                            邀请链接包含密码
+                        </label>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary" onclick="copyInviteLink()" style="font-size: 13px; padding: 8px 16px;">📋 复制链接</button>
+                        <button class="btn btn-secondary" onclick="downloadQRCode()" style="font-size: 13px; padding: 8px 16px;">💾 保存二维码</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let userId = localStorage.getItem('opencode-user-id') || ('user-' + Math.random().toString(36).substr(2, 9));
+        localStorage.setItem('opencode-user-id', userId);
+        let currentUser = null;
+        let participants = new Map();
+
+        // 聊天记录相关变量
+        let chatHistory = [];
+        let oldestMessageTime = null;
+        let isLoadingHistory = false;
+        let hasMoreHistory = true;
+        let isUserScrollingUp = false;
+        let initialHistoryLoaded = false;
+        const HISTORY_LIMIT = 50;
+
+        // 日志功能
+        function log(message, type = 'info') {
+            const container = document.getElementById('log-container');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            console.log(`[${time}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log-container').innerHTML = '';
+        }
+
+        // 连接服务器
+        let pendingPasswordQuestion = null;
+        let pendingPasswordAnswer = null;
+
+        // 角色变更处理 - 显示/隐藏角色密码输入框
+        function onRoleChange() {
+            const userRole = document.getElementById('user-role').value;
+            const passwordGroup = document.getElementById('role-password-group');
+
+            // 如果是Owner或Admin，显示角色密码输入框（创建带密码房间需要）
+            if (userRole === 'owner' || userRole === 'admin') {
+                passwordGroup.classList.remove('hidden');
+            } else {
+                passwordGroup.classList.add('hidden');
+            }
+        }
+
+        // 监听房间密码输入变化
+        document.getElementById('password-question').addEventListener('input', onRoleChange);
+        document.getElementById('password-answer').addEventListener('input', onRoleChange);
+
+        // 获取默认 WebSocket 地址（根据当前页面协议自动选择 ws/wss）
+        function getDefaultWsUrl() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            return `${protocol}//${host}`;
+        }
+
+        // 自动填充服务器地址（如果为空）
+        function autoFillServerUrl() {
+            const serverUrlInput = document.getElementById('server-url');
+            if (!serverUrlInput.value) {
+                serverUrlInput.value = getDefaultWsUrl();
+                console.log('[Connect] Auto-filled server URL:', serverUrlInput.value);
+            }
+        }
+
+        function connect() {
+            // 自动填充服务器地址
+            autoFillServerUrl();
+
+            const serverUrl = document.getElementById('server-url').value;
+            const sessionId = document.getElementById('session-id').value;
+            const userName = document.getElementById('user-name').value;
+            const userRole = document.getElementById('user-role').value;
+            const authToken = document.getElementById('auth-token').value;
+
+            // 保存密码设置（如果是 Owner 且设置了密码）
+            const passwordQuestionEl = document.getElementById('password-question');
+            const passwordAnswerEl = document.getElementById('password-answer');
+            const passwordQuestion = passwordQuestionEl ? passwordQuestionEl.value.trim() : '';
+            const passwordAnswer = passwordAnswerEl ? passwordAnswerEl.value.trim() : '';
+
+            console.log('[前端] 角色:', userRole, '问题:', passwordQuestion, '答案:', passwordAnswer);
+
+            // 角色密码验证（Owner和Admin都需要）
+            const rolePasswordEl = document.getElementById('role-password');
+            const rolePassword = rolePasswordEl ? rolePasswordEl.value.trim() : '';
+
+            // 只要选择Owner或Admin角色，就必须输入角色密码
+            if (userRole === 'owner' || userRole === 'admin') {
+                // 检查角色密码
+                if (!rolePassword) {
+                    alert(`${userRole === 'owner' ? 'Owner' : 'Admin'}角色需要输入角色密码才能连接`);
+                    return;
+                }
+
+                // 如果设置了房间密码，保存到pending
+                if (passwordQuestion && passwordAnswer) {
+                    pendingPasswordQuestion = passwordQuestion;
+                    pendingPasswordAnswer = passwordAnswer;
+                    console.log('[前端] 密码已保存到 pending 变量');
+                }
+            } else {
+                pendingPasswordQuestion = null;
+                pendingPasswordAnswer = null;
+            }
+
+            if (!serverUrl || !sessionId || !userName) {
+                alert('请填写所有必填项');
+                return;
+            }
+
+            currentUser = { id: userId, name: userName, role: userRole };
+
+            let wsUrl = serverUrl;
+            if (authToken) {
+                wsUrl += `?token=${encodeURIComponent(authToken)}`;
+            } else {
+                wsUrl += `?session=${encodeURIComponent(sessionId)}`;
+                wsUrl += `&name=${encodeURIComponent(userName)}`;
+                wsUrl += `&role=${encodeURIComponent(userRole)}`;
+                // 如果是 Owner 或 Admin，通过 URL 参数传递角色密码和房间密码（如果设置了）
+                console.log('[前端] 检查密码条件:', {userRole, hasQuestion: !!passwordQuestion, hasAnswer: !!passwordAnswer});
+                if (userRole === 'owner' || userRole === 'admin') {
+                    // 必须传递角色密码
+                    wsUrl += `&role_password=${encodeURIComponent(rolePassword)}`;
+
+                    // 如果设置了房间密码，也传递
+                    if (passwordQuestion && passwordAnswer) {
+                        wsUrl += `&pwd_question=${encodeURIComponent(passwordQuestion)}`;
+                        wsUrl += `&pwd_answer=${encodeURIComponent(passwordAnswer)}`;
+                        console.log('[前端] 添加密码到 URL:', {question: passwordQuestion, answer: passwordAnswer});
+                        log(`[前端] ${userRole} 连接，携带房间密码参数`);
+                    } else {
+                        log(`[前端] ${userRole} 连接，携带角色密码`);
+                    }
+                }
+                // 如果是通过邀请链接访问且包含密码答案，传递密码
+                else if (pendingPasswordAnswer) {
+                    wsUrl += `&pwd_answer=${encodeURIComponent(pendingPasswordAnswer)}`;
+                    log(`[前端] 使用邀请链接密码连接`);
+                }
+            }
+
+            log(`正在连接: ${serverUrl}`);
+            console.log('[前端] 完整 WebSocket URL:', wsUrl);
+            updateStatus('connecting', '连接中...');
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    log('WebSocket 连接已建立');
+                    // 等待服务器发送 connection.established 后再显示聊天界面
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`收到消息: ${data.type}`);
+                        handleServerMessage(data);
+                    } catch (e) {
+                        log(`收到原始消息: ${event.data}`);
+                    }
+                };
+
+                ws.onclose = (event) => {
+                    log(`连接已关闭: ${event.code} - ${event.reason}`);
+                    updateStatus('disconnected', '未连接');
+                    hideChat();
+                    // 清理语音聊天
+                    if (voiceChat.isJoined) {
+                        leaveVoiceChat();
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    log('WebSocket 错误: ' + error.message);
+                    updateStatus('disconnected', '连接失败');
+                };
+
+            } catch (error) {
+                log('连接失败: ' + error.message);
+                updateStatus('disconnected', '连接失败');
+            }
+        }
+
+        // 断开连接
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        // 更新连接状态
+        function updateStatus(status, text) {
+            const statusEl = document.getElementById('connection-status');
+            statusEl.className = `status status-${status}`;
+            statusEl.textContent = text;
+
+            if (status === 'connected') {
+                document.getElementById('disconnect-btn').classList.remove('hidden');
+            } else {
+                document.getElementById('disconnect-btn').classList.add('hidden');
+            }
+        }
+
+        // 显示/隐藏聊天界面
+        function showChat() {
+            document.getElementById('config-card').classList.add('hidden');
+            document.getElementById('password-card').classList.add('hidden');
+            document.getElementById('chat-card').classList.remove('hidden');
+            // 生成邀请二维码
+            setTimeout(generateQRCode, 100);
+        }
+
+        function hideChat() {
+            document.getElementById('config-card').classList.remove('hidden');
+            document.getElementById('password-card').classList.add('hidden');
+            document.getElementById('chat-card').classList.add('hidden');
+        }
+
+        // 显示密码验证界面
+        function showPasswordCard(question) {
+            document.getElementById('config-card').classList.add('hidden');
+            document.getElementById('chat-card').classList.add('hidden');
+            document.getElementById('password-card').classList.remove('hidden');
+            document.getElementById('password-question-display').textContent = question || '请输入密码';
+            document.getElementById('password-answer-input').value = '';
+            document.getElementById('password-answer-input').focus();
+            log('需要密码验证才能进入聊天室');
+        }
+
+        // 隐藏密码验证界面
+        function hidePasswordCard() {
+            document.getElementById('password-card').classList.add('hidden');
+        }
+
+        // 提交密码答案
+        function submitPassword() {
+            const answer = document.getElementById('password-answer-input').value.trim();
+            if (!answer) {
+                alert('请输入密码答案');
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('连接已断开，请重新连接');
+                return;
+            }
+
+            const message = {
+                type: 'verify_password',
+                answer: answer
+            };
+
+            ws.send(JSON.stringify(message));
+            log('发送密码答案');
+        }
+
+        // 加载初始历史记录（最新的消息）
+        function loadInitialHistory() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+            // 不设置 before 参数，获取最新的消息
+            const message = {
+                type: 'get_history',
+                limit: HISTORY_LIMIT
+                // 不设置 before，获取最新消息
+            };
+
+            ws.send(JSON.stringify(message));
+            log('请求加载历史消息');
+            isLoadingHistory = true;
+            updateLoadMoreButton();
+        }
+
+        // 加载更多历史记录
+        function loadMoreHistory() {
+            if (!ws || ws.readyState !== WebSocket.OPEN || isLoadingHistory || !hasMoreHistory) return;
+
+            const message = {
+                type: 'get_history',
+                limit: HISTORY_LIMIT,
+                before: oldestMessageTime
+            };
+
+            ws.send(JSON.stringify(message));
+            log('请求加载更多历史消息');
+            isLoadingHistory = true;
+            updateLoadMoreButton();
+        }
+
+        // 更新加载按钮状态
+        function updateLoadMoreButton() {
+            const container = document.getElementById('load-more-container');
+            const btn = document.getElementById('load-more-btn');
+
+            if (!hasMoreHistory) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            if (isLoadingHistory) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span>加载中...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '加载更多历史消息';
+            }
+        }
+
+        // 处理历史记录加载完成
+        function handleHistoryLoaded(data) {
+            isLoadingHistory = false;
+
+            const messages = data.payload?.messages || [];
+
+            log(`收到 ${messages.length} 条历史消息`);
+
+            if (messages.length === 0) {
+                hasMoreHistory = false;
+                updateLoadMoreButton();
+                initialHistoryLoaded = true;
+                return;
+            }
+
+            // 更新最早消息时间
+            oldestMessageTime = messages[messages.length - 1].timestamp;
+
+            // 检查是否还有更多历史记录
+            hasMoreHistory = messages.length >= HISTORY_LIMIT;
+            updateLoadMoreButton();
+
+            // 保存当前滚动位置
+            const container = document.getElementById('chat-container');
+            const oldScrollHeight = container.scrollHeight;
+            const oldScrollTop = container.scrollTop;
+
+            // 将新加载的消息添加到历史数组开头
+            // 映射字段名称（数据库使用下划线，前端使用驼峰）
+            const mappedMessages = messages.map(msg => ({
+                ...msg,
+                senderId: msg.senderId || msg.sender_id,
+                senderName: msg.senderName || msg.sender_name,
+                senderRole: msg.senderRole || msg.sender_role,
+            }));
+            chatHistory = [...mappedMessages, ...chatHistory];
+
+            // 如果是初始加载，清空并重新渲染
+            if (!initialHistoryLoaded) {
+                const loadMoreContainer = document.getElementById('load-more-container');
+                container.innerHTML = '';
+                container.appendChild(loadMoreContainer);
+
+                // 清空侧边栏
+                document.getElementById('mentions-list').innerHTML = '<div class="sidebar-empty">暂无@提及消息</div>';
+                document.getElementById('ai-responses-list').innerHTML = '<div class="sidebar-empty">暂无AI回复</div>';
+
+                // 收集需要添加到侧边栏的消息
+                const sidebarMessages = [];
+
+                // 按时间正序渲染所有消息（倒序遍历，让最早的消息在最上面）
+                for (let i = messages.length - 1; i >= 0; i--) {
+                    const msg = messages[i];
+                    const isOwn = msg.senderId === userId || msg.sender_id === userId;
+                    prependMessage(msg, isOwn);
+                    // 收集侧边栏消息
+                    if (shouldAddToSidebar(msg)) {
+                        sidebarMessages.push(msg);
+                    }
+                }
+
+                // 按时间倒序添加到侧边栏（最新的在前面）
+                sidebarMessages.reverse().forEach(msg => addToSidebar(msg, true));
+
+                container.scrollTop = container.scrollHeight;
+                initialHistoryLoaded = true;
+            } else {
+                // 加载更多：在顶部插入消息（倒序遍历，让最早的消息在最上面）
+                const sidebarMessages = [];
+                for (let i = mappedMessages.length - 1; i >= 0; i--) {
+                    const msg = mappedMessages[i];
+                    const isOwn = msg.senderId === userId;
+                    prependMessage(msg, isOwn);
+                    if (shouldAddToSidebar(msg)) {
+                        sidebarMessages.push(msg);
+                    }
+                }
+                // 按时间倒序添加
+                sidebarMessages.reverse().forEach(msg => addToSidebar(msg, true));
+
+                // 保持滚动位置
+                const newScrollHeight = container.scrollHeight;
+                container.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight);
+            }
+        }
+
+        // 在消息列表顶部插入消息
+        function prependMessage(message, isOwn) {
+            const container = document.getElementById('chat-container');
+            const loadMoreContainer = document.getElementById('load-more-container');
+
+            const div = document.createElement('div');
+
+            const isAIMessage = message.senderRole === 'ai' || message.senderId === 'ai-assistant';
+
+            if (isAIMessage) {
+                div.className = 'message message-ai';
+            } else {
+                div.className = `message ${isOwn ? 'message-own' : 'message-other'}`;
+            }
+
+            if (message.id) {
+                div.setAttribute('data-message-id', message.id);
+            }
+
+            let contentHtml = highlightMentions(message.content || '');
+
+            if (message.type === 'file' && message.fileData) {
+                const fileData = message.fileData;
+                const fileIcon = getFileIcon(fileData.mimeType || '');
+                const fileSize = formatFileSize(fileData.fileSize || 0);
+
+                console.log(`[addMessage] File message: ${fileData.fileName}, ossUrl: ${fileData.ossUrl ? 'present' : 'missing'}`);
+
+                if (message.id) {
+                    div.setAttribute('data-file-id', message.id);
+                }
+                if (fileData.ossUrl) {
+                    div.setAttribute('data-oss-url', fileData.ossUrl);
+                    console.log(`[addMessage] Set data-oss-url for fileId: ${message.id}`);
+                }
+                if (fileData.ossKey) {
+                    div.setAttribute('data-oss-key', fileData.ossKey);
+                }
+
+                // 使用事件委托，通过 data 属性存储数据
+                const downloadBtnId = 'dl-btn-' + message.id;
+                if (fileData.ossUrl) {
+                    pendingFileDownloads.set(downloadBtnId, {
+                        url: fileData.ossUrl,
+                        filename: fileData.fileName || 'download',
+                        ossKey: fileData.ossKey || ''
+                    });
+                }
+
+                contentHtml = `
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #333; border-radius: 8px; margin-top: 5px;">
+                        <span style="font-size: 24px;">${fileIcon}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileData.fileName || '未知文件'}</div>
+                            <div style="font-size: 12px; color: #fff;">${fileSize}</div>
+                        </div>
+                        ${fileData.ossUrl
+                            ? `<button id="${downloadBtnId}" class="file-download-btn" style="color: #fff; background: #2a2a2a; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">下载</button>`
+                            : '<span style="font-size: 12px; color: #fff;">上传中...</span>'}
+                    </div>
+                `;
+            } else if (isAIMessage) {
+                const fullContent = markdownToHtml(message.content || '');
+                const plainText = message.content || '';
+                const previewText = plainText.substring(0, 20);
+                const needsExpansion = plainText.length > 20;
+
+                if (needsExpansion) {
+                    contentHtml = `
+                        <div class="ai-content-collapsed" data-ai-content="${message.id}">
+                            <span class="ai-content-preview">${previewText}</span>
+                            <span class="ai-expand-btn" data-ai-btn="${message.id}" onclick="toggleAIContent('${message.id}')">[展开]</span>
+                            <div class="ai-content-full">${fullContent}</div>
+                        </div>
+                    `;
+                } else {
+                    contentHtml = fullContent;
+                }
+            }
+
+            if (message.type === 'image' && message.imageData) {
+                const imgUrl = message.imageData.url || message.imageData.ossUrl;
+                if (imgUrl) {
+                    contentHtml = `<img src="${imgUrl}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;" />`;
+                }
+            }
+
+            const senderName = message.senderName || message.userName || '未知用户';
+            const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : new Date().toLocaleString();
+
+            div.innerHTML = `
+                <div class="message-header">${senderName} · ${timestamp}</div>
+                <div class="message-content">${contentHtml}</div>
+            `;
+
+            container.insertBefore(div, loadMoreContainer.nextSibling);
+        }
+
+        // 监听滚动事件，检测是否滚动到顶部
+        function setupScrollListener() {
+            const container = document.getElementById('chat-container');
+
+            container.addEventListener('scroll', () => {
+                const scrollTop = container.scrollTop;
+                const scrollHeight = container.scrollHeight;
+                const clientHeight = container.clientHeight;
+
+                // 检测用户是否滚动到顶部附近
+                if (scrollTop < 50 && hasMoreHistory && !isLoadingHistory && initialHistoryLoaded) {
+                    loadMoreHistory();
+                }
+
+                // 检测用户是否正在向上滚动查看历史
+                const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
+                isUserScrollingUp = !isAtBottom;
+            });
+        }
+
+        setupScrollListener();
+
+        // 处理服务器消息
+        function handleServerMessage(data) {
+            console.log('收到服务器消息:', data.type, data);
+            switch (data.type) {
+                case 'connection.established':
+                    updateStatus('connected', '已连接');
+                    showChat();
+                    log('服务器确认连接成功');
+                    document.getElementById('room-name').textContent = `(${data.payload?.sessionId || ''})`;
+
+                    // 如果是admin或owner，显示文件管理按钮
+                    const userRole = document.getElementById('user-role').value;
+                    if (userRole === 'admin' || userRole === 'owner') {
+                        document.getElementById('btn-manage-files').classList.remove('hidden');
+                    }
+
+                    // 重置历史记录状态
+                    chatHistory = [];
+                    oldestMessageTime = null;
+                    hasMoreHistory = true;
+                    initialHistoryLoaded = false;
+                    // 清空聊天容器
+                    document.getElementById('chat-container').innerHTML = `
+                        <div class="load-more-container" id="load-more-container" style="display: none;">
+                            <button class="load-more-btn" id="load-more-btn" onclick="loadMoreHistory()">
+                                加载更多历史消息
+                            </button>
+                        </div>
+                    `;
+                    // 加载最近一天的历史消息
+                    loadInitialHistory();
+
+                    // 密码已通过 URL 参数设置，无需再发送 set_password 消息
+                    // 保留 pendingPasswordQuestion 和 pendingPasswordAnswer 用于生成邀请链接
+
+                    sendSystemMessage(`${document.getElementById('user-name').value} 加入了会话`);
+                    break;
+                case 'password.set':
+                    addSystemMessage('密码设置成功');
+                    log('密码设置成功');
+                    break;
+                case 'message':
+                case 'message.new':
+                case 'ai.response':
+                    const msg = data.payload || data.message;
+                    if (msg) {
+                        msg.senderName = data.senderName || msg.senderName || msg.sender_name || '未知用户';
+                        msg.senderId = data.senderId || msg.senderId || msg.sender_id;
+                        msg.senderRole = data.senderRole || msg.senderRole || msg.sender_role || 'member';
+                        msg.timestamp = msg.timestamp || data.timestamp || new Date().toISOString();
+
+                        if (msg.type === 'file' && msg.fileData) {
+                            log(`收到文件消息: ${msg.fileData.fileName || '未知文件'}`);
+                        }
+
+                        chatHistory.push(msg);
+                        const shouldScroll = !isUserScrollingUp;
+                        addMessage(msg, data.senderId === userId, shouldScroll);
+
+                        log(`收到消息: ${msg.content?.substring(0, 30)}...`);
+                    } else {
+                        log('收到消息但格式不正确: ' + JSON.stringify(data));
+                    }
+                    break;
+                case 'user.joined':
+                    const joinedUser = data.payload || data.user;
+                    if (joinedUser) {
+                        addSystemMessage(`${joinedUser.userName || joinedUser.name} 加入了会话`);
+                        addParticipant(joinedUser);
+                    }
+                    break;
+                case 'user.left':
+                    const leftUser = data.payload || data.user;
+                    if (leftUser) {
+                        addSystemMessage(`${leftUser.userName || leftUser.name || '用户'} 离开了会话`);
+                        removeParticipant(leftUser.userId || leftUser.id);
+                    }
+                    break;
+                case 'typing.start':
+                    log(`${data.senderName || '某人'} 正在输入...`);
+                    break;
+                case 'summary.generating':
+                    addSystemMessage('正在生成对话总结...');
+                    log('生成总结中...');
+                    break;
+                case 'summary.completed':
+                    const summary = data.payload?.summary || '';
+                    displaySummary(summary);
+                    addSystemMessage(`对话总结已生成（基于 ${data.payload?.messageCount || 0} 条消息）`);
+                    log('总结生成完成');
+                    break;
+                case 'summary.error':
+                    addSystemMessage(`总结生成失败: ${data.payload?.error || '未知错误'}`);
+                    log('总结生成失败: ' + (data.payload?.error || '未知错误'));
+                    break;
+                case 'ai.memory_cleared':
+                    hideSummary();
+                    addSystemMessage(`${data.payload?.message || 'AI记忆已清空'}`);
+                    log('AI记忆已清空');
+                    break;
+                case 'history.loaded':
+                    handleHistoryLoaded(data);
+                    break;
+                case 'password.required':
+                    showPasswordCard(data.payload?.question);
+                    break;
+                case 'password.incorrect':
+                    alert('密码答案不正确，请重试');
+                    log('密码答案不正确');
+                    break;
+                // 语音聊天消息处理
+                case 'voice.join':
+                case 'voice.leave':
+                case 'voice.start_speaking':
+                case 'voice.stop_speaking':
+                case 'voice.transcript':
+                case 'voice.transcript.final':
+                case 'voice.ai_analyze':
+                case 'voice.error':
+                case 'voice.status':
+                case 'voice.asr_ready':
+                case 'voice.audio':
+                    handleVoiceMessage(data);
+                    break;
+                // 文件下载URL刷新
+                case 'download_url_refreshed':
+                    handleDownloadUrlRefreshed(data);
+                    break;
+                case 'download_url_error':
+                    log(`下载URL刷新失败: ${data.error || '未知错误'}`);
+                    addSystemMessage(`文件下载失败: ${data.error || '无法获取下载链接'}`, 'error');
+                    break;
+                // 文件管理消息
+                case 'session_files_list':
+                    displayManageFileList(data.payload?.files || []);
+                    break;
+                case 'file.deleted':
+                    log(`文件已删除: ${data.payload?.fileName || '未知文件'}`);
+                    addSystemMessage(`文件 "${data.payload?.fileName || '未知文件'}" 已被 ${data.payload?.deletedByRole || '管理员'} 删除`, 'success');
+                    // 刷新文件列表
+                    if (document.getElementById('btn-manage-files') && !document.getElementById('btn-manage-files').classList.contains('hidden')) {
+                        listSessionFilesForManage();
+                    }
+                    break;
+                case 'file.renamed':
+                    log(`文件已重命名: ${data.payload?.oldFileName} -> ${data.payload?.newFileName}`);
+                    addSystemMessage(`文件 "${data.payload?.oldFileName}" 已被 ${data.payload?.renamedByRole || '管理员'} 重命名为 "${data.payload?.newFileName}"`, 'success');
+                    // 刷新文件列表
+                    if (document.getElementById('btn-manage-files') && !document.getElementById('btn-manage-files').classList.contains('hidden')) {
+                        listSessionFilesForManage();
+                    }
+                    break;
+                case 'error':
+                    const errorMsg = data.payload?.message || data.message || '未知错误';
+                    addSystemMessage(`错误: ${errorMsg}`, 'error');
+                    log(`服务器错误: ${errorMsg}`);
+                    break;
+                default:
+                    log(`未知消息类型: ${data.type}`);
+                    console.log('收到消息:', data);
+            }
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+
+            if (!content || !ws) return;
+
+            const mentions = [];
+            let mentionsAI = false;
+            if (content.includes('@ai')) {
+                mentions.push('ai');
+                mentionsAI = true;
+            }
+            if (content.includes('@all')) {
+                mentions.push('all');
+            }
+
+            const message = {
+                type: 'message',
+                message: {
+                    id: 'msg-' + Date.now(),
+                    type: 'text',
+                    content: content,
+                    mentions: mentions,
+                    mentionsAI: mentionsAI
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+            input.value = '';
+            log(`发送消息: ${content}`);
+        }
+
+        // 发送提及
+        function sendMention(mention) {
+            const input = document.getElementById('message-input');
+            input.value = mention + ' ' + input.value;
+            input.focus();
+        }
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 简单的 Markdown 转换
+        function markdownToHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        // 检查消息是否应该添加到侧边栏
+        function shouldAddToSidebar(message) {
+            const isAIMessage = message.senderRole === 'ai' || message.senderId === 'ai-assistant';
+            const content = message.content || '';
+            const hasMention = content.includes('@ai') || content.includes('@all') || /@\w+/.test(content);
+            return (hasMention && !isAIMessage) || isAIMessage;
+        }
+
+        // 添加消息到侧边栏
+        // append = false: 插入到顶部（新消息）
+        // append = true: 追加到底部（历史消息）
+        function addToSidebar(message, append = false) {
+            const isAIMessage = message.senderRole === 'ai' || message.senderId === 'ai-assistant';
+            const content = message.content || '';
+            const senderName = message.senderName || message.userName || '未知用户';
+            const messageId = message.id;
+            // 侧边栏使用紧凑格式：MM-DD HH:MM
+            const date = message.timestamp ? new Date(message.timestamp) : new Date();
+            const timestamp = `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+
+            // 检查是否是@提及消息（包含@ai或@all或其他@）
+            const hasMention = content.includes('@ai') || content.includes('@all') || /@\w+/.test(content);
+
+            // 添加到@提及侧边栏
+            if (hasMention && !isAIMessage) {
+                const mentionsList = document.getElementById('mentions-list');
+                // 移除空状态
+                const emptyDiv = mentionsList.querySelector('.sidebar-empty');
+                if (emptyDiv) emptyDiv.remove();
+
+                const preview = content.replace(/@\w+/g, '').trim().substring(0, 30) || '@提及';
+                const item = document.createElement('div');
+                item.className = 'sidebar-item sidebar-item-mention';
+                item.setAttribute('data-message-id', messageId);
+                item.innerHTML = `
+                    <div class="sidebar-item-sender">${senderName}</div>
+                    <div class="sidebar-item-preview">${preview}...</div>
+                    <div class="sidebar-item-time">${timestamp}</div>
+                `;
+                item.onclick = () => scrollToMessage(messageId);
+
+                if (append) {
+                    mentionsList.appendChild(item);
+                } else {
+                    mentionsList.insertBefore(item, mentionsList.firstChild);
+                }
+
+                // 限制数量
+                while (mentionsList.children.length > 20) {
+                    if (append) {
+                        mentionsList.removeChild(mentionsList.firstChild);
+                    } else {
+                        mentionsList.removeChild(mentionsList.lastChild);
+                    }
+                }
+            }
+
+            // 添加到AI回复侧边栏
+            if (isAIMessage) {
+                const aiList = document.getElementById('ai-responses-list');
+                // 移除空状态
+                const emptyDiv = aiList.querySelector('.sidebar-empty');
+                if (emptyDiv) emptyDiv.remove();
+
+                const preview = content.replace(/```[\s\S]*?```/g, '[代码]').substring(0, 30) || 'AI回复';
+                const item = document.createElement('div');
+                item.className = 'sidebar-item sidebar-item-ai';
+                item.setAttribute('data-message-id', messageId);
+                item.innerHTML = `
+                    <div class="sidebar-item-sender">AI助手</div>
+                    <div class="sidebar-item-preview">${preview}...</div>
+                    <div class="sidebar-item-time">${timestamp}</div>
+                `;
+                item.onclick = () => scrollToMessage(messageId);
+
+                if (append) {
+                    aiList.appendChild(item);
+                } else {
+                    aiList.insertBefore(item, aiList.firstChild);
+                }
+
+                // 限制数量
+                while (aiList.children.length > 20) {
+                    if (append) {
+                        aiList.removeChild(aiList.firstChild);
+                    } else {
+                        aiList.removeChild(aiList.lastChild);
+                    }
+                }
+            }
+        }
+
+        // 滚动到指定消息
+        function scrollToMessage(messageId) {
+            const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (messageEl) {
+                messageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // 高亮效果
+                messageEl.style.transition = 'box-shadow 0.3s';
+                messageEl.style.boxShadow = '0 0 15px #666';
+                setTimeout(() => {
+                    messageEl.style.boxShadow = '';
+                }, 1500);
+            }
+        }
+
+        // 切换AI消息展开/折叠
+        function toggleAIContent(messageId) {
+            const contentEl = document.querySelector(`[data-ai-content="${messageId}"]`);
+            const btnEl = document.querySelector(`[data-ai-btn="${messageId}"]`);
+            if (contentEl && btnEl) {
+                const isExpanded = contentEl.classList.contains('ai-content-expanded');
+                if (isExpanded) {
+                    contentEl.classList.remove('ai-content-expanded');
+                    btnEl.textContent = '[展开]';
+                } else {
+                    contentEl.classList.add('ai-content-expanded');
+                    btnEl.textContent = '[收起]';
+                }
+            }
+        }
+
+        // 添加消息到聊天区
+        function addMessage(message, isOwn, shouldScroll = true) {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+
+            const isAIMessage = message.senderRole === 'ai' || message.senderId === 'ai-assistant';
+
+            if (isAIMessage) {
+                div.className = 'message message-ai';
+            } else {
+                div.className = `message ${isOwn ? 'message-own' : 'message-other'}`;
+            }
+
+            if (message.id) {
+                div.setAttribute('data-message-id', message.id);
+            }
+
+            let contentHtml = highlightMentions(message.content || '');
+
+            if (message.type === 'file' && message.fileData) {
+                const fileData = message.fileData;
+                const fileIcon = getFileIcon(fileData.mimeType || '');
+                const fileSize = formatFileSize(fileData.fileSize || 0);
+
+                console.log(`[addMessage] File message: ${fileData.fileName}, ossUrl: ${fileData.ossUrl ? 'present' : 'missing'}`);
+
+                if (message.id) {
+                    div.setAttribute('data-file-id', message.id);
+                }
+                if (fileData.ossUrl) {
+                    div.setAttribute('data-oss-url', fileData.ossUrl);
+                    console.log(`[addMessage] Set data-oss-url for fileId: ${message.id}`);
+                }
+                if (fileData.ossKey) {
+                    div.setAttribute('data-oss-key', fileData.ossKey);
+                }
+
+                // 使用事件委托，通过 data 属性存储数据
+                const downloadBtnId = 'dl-btn-' + message.id;
+                if (fileData.ossUrl) {
+                    pendingFileDownloads.set(downloadBtnId, {
+                        url: fileData.ossUrl,
+                        filename: fileData.fileName || 'download',
+                        ossKey: fileData.ossKey || ''
+                    });
+                }
+
+                contentHtml = `
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #333; border-radius: 8px; margin-top: 5px;">
+                        <span style="font-size: 24px;">${fileIcon}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${fileData.fileName || '未知文件'}</div>
+                            <div style="font-size: 12px; color: #fff;">${fileSize}</div>
+                        </div>
+                        ${fileData.ossUrl
+                            ? `<button id="${downloadBtnId}" class="file-download-btn" style="color: #fff; background: #2a2a2a; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">下载</button>`
+                            : '<span style="font-size: 12px; color: #fff;">上传中...</span>'}
+                    </div>
+                `;
+            } else if (isAIMessage) {
+                const fullContent = markdownToHtml(message.content || '');
+                const plainText = message.content || '';
+                const previewText = plainText.substring(0, 20);
+                const needsExpansion = plainText.length > 20;
+
+                if (needsExpansion) {
+                    contentHtml = `
+                        <div class="ai-content-collapsed" data-ai-content="${message.id}">
+                            <span class="ai-content-preview">${previewText}</span>
+                            <span class="ai-expand-btn" data-ai-btn="${message.id}" onclick="toggleAIContent('${message.id}')">[展开]</span>
+                            <div class="ai-content-full">${fullContent}</div>
+                        </div>
+                    `;
+                } else {
+                    contentHtml = fullContent;
+                }
+            }
+
+            if (message.type === 'image' && message.imageData) {
+                const imgUrl = message.imageData.url || message.imageData.ossUrl;
+                if (imgUrl) {
+                    contentHtml = `<img src="${imgUrl}" style="max-width: 100%; border-radius: 8px; margin-top: 5px;" />`;
+                }
+            }
+
+            const senderName = message.senderName || message.userName || '未知用户';
+            const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : new Date().toLocaleString();
+
+            div.innerHTML = `
+                <div class="message-header">${senderName} · ${timestamp}</div>
+                <div class="message-content">${contentHtml}</div>
+            `;
+
+            container.appendChild(div);
+
+            // 添加到侧边栏
+            addToSidebar(message);
+
+            if (shouldScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // 添加系统消息
+        function addSystemMessage(text, type = 'info') {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.className = 'message message-system';
+            div.textContent = text;
+            container.appendChild(div);
+
+            if (!isUserScrollingUp) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // 发送系统消息（本地显示）
+        function sendSystemMessage(text) {
+            addSystemMessage(text);
+        }
+
+        // 高亮提及
+        function highlightMentions(text) {
+            return text
+                .replace(/@ai/g, '<span class="mention">@ai</span>')
+                .replace(/@all/g, '<span class="mention">@all</span>')
+                .replace(/@\w+/g, match => `<span class="mention">${match}</span>`);
+        }
+
+        // 添加参与者
+        function addParticipant(user) {
+            const userId = user.userId || user.id;
+            if (userId) {
+                participants.set(userId, {
+                    userId: userId,
+                    userName: user.userName || user.name || user.user_name || '未知用户',
+                    userRole: user.userRole || user.role || 'guest'
+                });
+                updateParticipantsList();
+            }
+        }
+
+        // 移除参与者
+        function removeParticipant(userId) {
+            if (userId) {
+                participants.delete(userId);
+                updateParticipantsList();
+            }
+        }
+
+        // 更新参与者列表
+        function updateParticipantsList() {
+            const container = document.getElementById('participants');
+            container.innerHTML = '';
+
+            participants.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'participant';
+                const role = user.userRole || 'guest';
+                div.innerHTML = `
+                    <span class="participant-role role-${role}"></span>
+                    <span>${user.userName || '未知用户'}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 总结聊天
+        function summarizeChat() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            const message = {
+                type: 'summarize'
+            };
+
+            ws.send(JSON.stringify(message));
+            log('发送总结聊天请求');
+        }
+
+        // 显示总结
+        function displaySummary(summary) {
+            const displayDiv = document.getElementById('summary-display');
+            const contentDiv = document.getElementById('summary-content');
+
+            if (displayDiv && contentDiv) {
+                contentDiv.innerHTML = markdownToHtml(summary);
+                displayDiv.style.display = 'block';
+            }
+        }
+
+        // 隐藏总结
+        function hideSummary() {
+            const displayDiv = document.getElementById('summary-display');
+            if (displayDiv) {
+                displayDiv.style.display = 'none';
+            }
+        }
+
+        // 清空AI记忆
+        function clearAIMemory() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            if (!confirm('确定要清空AI记忆吗？这将删除所有对话总结。')) {
+                return;
+            }
+
+            const message = {
+                type: 'clear_ai_memory'
+            };
+
+            ws.send(JSON.stringify(message));
+            log('发送清空AI记忆请求');
+        }
+
+        // 文件上传相关变量
+        let currentUpload = null;
+
+        // 处理文件选择
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            log(`准备上传文件: ${file.name} (${formatFileSize(file.size)})`);
+            await uploadFile(file);
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // 获取文件图标
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) return '';
+            if (mimeType.startsWith('video/')) return '';
+            if (mimeType.startsWith('audio/')) return '';
+            if (mimeType.includes('pdf')) return '';
+            if (mimeType.includes('word') || mimeType.includes('document')) return '';
+            if (mimeType.includes('excel') || mimeType.includes('sheet')) return '';
+            if (mimeType.includes('zip') || mimeType.includes('compressed')) return '';
+            return '';
+        }
+
+        // 上传文件
+        async function uploadFile(file) {
+            const progressDiv = document.getElementById('upload-progress');
+            const progressBar = document.getElementById('upload-bar');
+            const statusSpan = document.getElementById('upload-status');
+
+            progressDiv.style.display = 'block';
+            progressBar.style.width = '0%';
+            statusSpan.textContent = '准备上传...';
+
+            try {
+                const fileId = 'file-' + Date.now();
+                console.log(`[Upload] Starting upload for file: ${file.name}, id: ${fileId}`);
+
+                const message = {
+                    type: 'message',
+                    message: {
+                        id: fileId,
+                        type: 'file',
+                        content: `${getFileIcon(file.type)} 上传文件: ${file.name}`,
+                        fileData: {
+                            fileName: file.name,
+                            fileSize: file.size,
+                            mimeType: file.type || 'application/octet-stream'
+                        },
+                        mentions: [],
+                        mentionsAI: false
+                    }
+                };
+
+                statusSpan.textContent = '获取上传地址...';
+                progressBar.style.width = '20%';
+
+                console.log(`[Upload] Sending file metadata message to server`);
+                ws.send(JSON.stringify(message));
+                log(`已发送文件元数据，等待服务器生成OSS上传地址...`);
+
+                console.log(`[Upload] Waiting for OSS upload URL...`);
+                const uploadUrl = await waitForUploadUrl(fileId);
+                console.log(`[Upload] Got upload URL: ${uploadUrl ? uploadUrl.substring(0, 50) + '...' : 'null'}`);
+
+                if (!uploadUrl) {
+                    throw new Error('未能获取上传地址，服务器可能未启用OSS');
+                }
+
+                log(`获取到OSS上传地址，开始上传文件...`);
+                statusSpan.textContent = '上传到云存储...';
+                progressBar.style.width = '50%';
+
+                const xhr = new XMLHttpRequest();
+
+                currentUpload = xhr;
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 40) + 50;
+                        progressBar.style.width = percent + '%';
+                        statusSpan.textContent = `上传中... ${Math.round((e.loaded / e.total) * 100)}%`;
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status === 200) {
+                        progressBar.style.width = '100%';
+                        statusSpan.textContent = '上传完成!';
+                        log(`文件上传成功: ${file.name}`);
+
+                        setTimeout(() => {
+                            progressDiv.style.display = 'none';
+                            progressBar.style.width = '0%';
+                        }, 2000);
+
+                        sendFileUploadedMessage(fileId, file.name, file.size, file.type);
+                    } else {
+                        throw new Error(`上传失败: ${xhr.status}`);
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    throw new Error('网络错误');
+                });
+
+                xhr.open('PUT', uploadUrl, true);
+                xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                xhr.send(file);
+
+            } catch (error) {
+                console.error('上传失败:', error);
+                statusSpan.textContent = '上传失败: ' + error.message;
+                progressBar.style.background = '#888';
+                log('上传失败: ' + error.message);
+
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                    progressBar.style.width = '0%';
+                    progressBar.style.background = '#666';
+                }, 3000);
+            }
+        }
+
+        // ===========================================================================
+        // 文件下载中心功能
+        // ===========================================================================
+
+        // 存储文件列表
+        let aiGeneratedFiles = [];
+        let sharedFiles = [];
+
+        // 存储待处理的下载URL刷新请求
+        const pendingDownloadRequests = new Map();
+
+        // 存储待下载文件信息（用于事件委托）
+        const pendingFileDownloads = new Map();
+
+        // 设置文件下载按钮事件委托
+        function setupFileDownloadDelegation() {
+            console.log('[Download] Setting up file download delegation');
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList.contains('file-download-btn')) {
+                    console.log('[Download] Button clicked:', e.target.id || e.target.getAttribute('data-download-id'));
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // 尝试从 id 获取（聊天消息）
+                    const btnId = e.target.id;
+                    if (btnId) {
+                        const fileInfo = pendingFileDownloads.get(btnId);
+                        if (fileInfo) {
+                            console.log('[Download] Found file info by id:', btnId);
+                            handleFileDownload(fileInfo.url, fileInfo.filename, fileInfo.ossKey);
+                            return;
+                        }
+                    }
+
+                    // 尝试从 data-download-id 获取（文件下载中心）
+                    const downloadId = e.target.getAttribute('data-download-id');
+                    if (downloadId) {
+                        console.log('[Download] Looking for downloadId:', downloadId);
+                        const fileInfo = pendingFileDownloads.get(downloadId);
+                        if (fileInfo) {
+                            console.log('[Download] Found file info by downloadId');
+                            handleFileDownload(fileInfo.url, fileInfo.filename, fileInfo.ossKey);
+                        } else {
+                            console.error('[Download] No file info found for downloadId:', downloadId);
+                        }
+                    }
+                }
+            });
+        }
+
+        // 刷新文件列表（从页面消息中提取）
+        function refreshFileList() {
+            extractFilesFromMessages();
+            displayFileList('all');
+            log('文件列表已刷新');
+        }
+
+        // 列出AI生成的文件
+        function listAIFiles() {
+            extractFilesFromMessages();
+            displayFileList('ai');
+        }
+
+        // 列出共享文件
+        function listSharedFiles() {
+            extractFilesFromMessages();
+            displayFileList('shared');
+        }
+
+        // ===========================================================================
+        // 文件管理功能（仅 Admin 和 Owner 可用）
+        // ===========================================================================
+
+        // 存储会话文件列表（用于管理）
+        let sessionFilesForManage = [];
+
+        // 请求文件列表进行管理
+        function listSessionFilesForManage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            const message = {
+                type: 'list_session_files'
+            };
+            ws.send(JSON.stringify(message));
+            log('请求文件列表进行管理...');
+        }
+
+        // 删除文件
+        function deleteFile(fileId, fileName) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            if (!confirm(`确定要删除文件 "${fileName}" 吗？此操作不可恢复。`)) {
+                return;
+            }
+
+            const message = {
+                type: 'delete_file',
+                fileId: fileId
+            };
+            ws.send(JSON.stringify(message));
+            log(`请求删除文件: ${fileName}`);
+        }
+
+        // 重命名文件
+        function renameFile(fileId, oldFileName) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            const newName = prompt(`请输入新文件名:`, oldFileName);
+            if (!newName || newName === oldFileName) {
+                return;
+            }
+
+            const message = {
+                type: 'rename_file',
+                fileId: fileId,
+                newFileName: newName
+            };
+            ws.send(JSON.stringify(message));
+            log(`请求重命名文件: ${oldFileName} -> ${newName}`);
+        }
+
+        // 显示文件管理列表
+        function displayManageFileList(files) {
+            const container = document.getElementById('file-list-container');
+            sessionFilesForManage = files;
+
+            if (!files || files.length === 0) {
+                container.innerHTML = '<div style="color: #fff; text-align: center; padding: 20px;">暂无文件</div>';
+                return;
+            }
+
+            const userRole = document.getElementById('user-role').value;
+            const canManage = userRole === 'admin' || userRole === 'owner';
+
+            let html = '<div style="font-size: 12px; color: #fff; margin-bottom: 10px;">共 ' + files.length + ' 个文件</div>';
+
+            files.forEach(file => {
+                const size = formatFileSize(file.fileSize);
+                const date = new Date(file.uploadedAt).toLocaleString();
+
+                html += `
+                    <div style="background: #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 32px;">📄</div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${escapeHtml(file.fileName)}
+                            </div>
+                            <div style="font-size: 12px; color: #fff; margin-top: 4px;">
+                                大小: ${size} | 上传者: ${escapeHtml(file.uploadedBy || '未知')} | ${date}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="${file.ossUrl || '#'})" target="_blank" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; text-decoration: none;">下载</a>
+                            ${canManage ? `
+                                <button onclick="renameFile('${file.id}', '${escapeHtml(file.fileName)}')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">重命名</button>
+                                <button onclick="deleteFile('${file.id}', '${escapeHtml(file.fileName)}')" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">删除</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (!bytes) return '未知';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 从消息中提取文件信息
+        function extractFilesFromMessages() {
+            aiGeneratedFiles = [];
+            sharedFiles = [];
+
+            // 从聊天记录中提取AI生成的文件
+            console.log('开始提取文件，chatHistory长度:', chatHistory.length);
+            chatHistory.forEach((msg, index) => {
+                console.log(`消息${index}: senderRole=${msg.senderRole}, senderId=${msg.senderId}, hasContent=${!!msg.content}`);
+                // 检查AI消息中的文件（支持多种senderRole格式）
+                const isAIMessage = msg.senderRole === 'ai' || msg.senderId === 'ai-assistant' || msg.sender_role === 'ai';
+                if (isAIMessage && msg.content) {
+                    console.log('发现AI消息，内容长度:', msg.content.length, '内容前200字:', msg.content.substring(0, 200));
+                    // 查找所有下载链接（支持完整URL和本地路径）
+                    // 匹配模式：下载链接：URL 或 - 下载链接：URL 或 🔗 下载链接：URL 或直接包含/downloads/的链接
+                    const links = [];
+                    const seen = new Set();
+
+                    // 模式1: 标准"下载链接："格式
+                    const downloadLinkRegex = /下载链接[：:]\s*(https?:\/\/[^\s\n]+|\/[^\s\n]+)/gi;
+                    let match;
+                    while ((match = downloadLinkRegex.exec(msg.content)) !== null) {
+                        if (!seen.has(match[1])) {
+                            links.push(match[1]);
+                            seen.add(match[1]);
+                        }
+                    }
+
+                    // 模式2: 列表项格式 "- 下载链接：URL"
+                    const listItemRegex = /-\s*下载链接[：:]\s*(https?:\/\/[^\s\n]+|\/[^\s\n]+)/gi;
+                    while ((match = listItemRegex.exec(msg.content)) !== null) {
+                        if (!seen.has(match[1])) {
+                            links.push(match[1]);
+                            seen.add(match[1]);
+                        }
+                    }
+
+                    // 模式3: 任何/downloads/开头的本地路径（排除尾随标点）
+                    const localPathRegex = /(\/downloads\/[^\s\n`"'<>]+)/gi;
+                    while ((match = localPathRegex.exec(msg.content)) !== null) {
+                        const cleanUrl = match[1].replace(/[`"'<>]+$/, '');
+                        if (!seen.has(cleanUrl)) {
+                            links.push(cleanUrl);
+                            seen.add(cleanUrl);
+                        }
+                    }
+
+                    // 模式4: 任何OSS URL (包含oss-cn-beijing.aliyuncs.com)（排除尾随标点）
+                    const ossRegex = /(https?:\/\/[^\s\n`"'<>]*oss[^\s\n`"'<>]*\.aliyuncs\.com[^\s\n`"'<>]*)/gi;
+                    while ((match = ossRegex.exec(msg.content)) !== null) {
+                        const cleanUrl = match[1].replace(/[`"'<>]+$/, '');
+                        if (!seen.has(cleanUrl)) {
+                            links.push(cleanUrl);
+                            seen.add(cleanUrl);
+                        }
+                    }
+
+                    console.log('找到的下载链接:', links);
+
+                    // 为每个链接提取文件名
+                    links.forEach(url => {
+                        console.log('处理链接:', url);
+
+                        // 首先尝试从URL直接提取文件名
+                        const urlParts = url.split('/');
+                        const lastPart = urlParts[urlParts.length - 1];
+                        let filename = null;
+                        try {
+                            filename = decodeURIComponent(lastPart);
+                        } catch (e) {
+                            filename = lastPart;
+                        }
+
+                        // 尝试从URL上方的行查找更好的文件名
+                        const urlIndex = msg.content.indexOf(url);
+                        if (urlIndex > 0) {
+                            const contentBeforeUrl = msg.content.substring(0, urlIndex);
+                            const lines = contentBeforeUrl.split('\n');
+
+                            // 从后向前查找文件名
+                            for (let i = lines.length - 1; i >= 0; i--) {
+                                const line = lines[i].trim();
+                                if (!line) continue;
+
+                                // 模式1: "1. 文件名.txt - 描述"
+                                const numberedMatch = line.match(/^[\d]+\.\s*(.+?)(?:\s+-\s+|$)/);
+                                if (numberedMatch) {
+                                    const potentialName = numberedMatch[1].trim();
+                                    // 检查是否包含扩展名
+                                    if (/\.\w{2,10}$/.test(potentialName)) {
+                                        filename = potentialName;
+                                        break;
+                                    }
+                                }
+
+                                // 模式2: "文件名[：:]" 或 "📄 文件名"
+                                const labelMatch = line.match(/(?:文件名[：:]|📄)\s*(.+)/i);
+                                if (labelMatch) {
+                                    const potentialName = labelMatch[1].trim();
+                                    if (/\.\w{2,10}$/.test(potentialName)) {
+                                        filename = potentialName;
+                                        break;
+                                    }
+                                }
+
+                                // 模式3: 如果这一行只是文件名（包含扩展名）
+                                if (/\.\w{2,10}$/.test(line) && !line.includes('：') && !line.includes(':') && line.length < 100) {
+                                    filename = line;
+                                    break;
+                                }
+                            }
+                        }
+
+                        console.log('提取的文件名:', filename);
+
+                        // 尝试从URL中提取ossKey
+                        let extractedOssKey = '';
+                        if (url.includes('aliyuncs.com')) {
+                            const match = url.match(/aliyuncs\.com\/(.+?)(\?|$)/);
+                            if (match) {
+                                extractedOssKey = decodeURIComponent(match[1]);
+                            }
+                        }
+
+                        aiGeneratedFiles.push({
+                            filename: filename || '未知文件',
+                            url: url,
+                            ossKey: extractedOssKey,
+                            timestamp: msg.timestamp,
+                            sender: msg.senderName,
+                            type: 'ai'
+                        });
+                    });
+                }
+
+                // 检查文件分享消息
+                if (msg.type === 'file' || (msg.fileData && msg.fileData.ossUrl)) {
+                    sharedFiles.push({
+                        filename: msg.fileData?.fileName || msg.fileName || '未知文件',
+                        url: msg.fileData?.ossUrl || msg.fileUrl,
+                        ossKey: msg.fileData?.ossKey || '',
+                        size: msg.fileData?.fileSize || msg.fileSize,
+                        timestamp: msg.timestamp,
+                        sender: msg.senderName,
+                        type: 'shared'
+                    });
+                }
+            });
+
+            console.log(`提取到 ${aiGeneratedFiles.length} 个AI文件:`, aiGeneratedFiles.map(f => f.filename));
+            console.log(`${sharedFiles.length} 个共享文件:`, sharedFiles.map(f => f.filename));
+        }
+
+        // 显示文件列表
+        function displayFileList(filter) {
+            const container = document.getElementById('file-list-container');
+            let files = [];
+
+            if (filter === 'ai') {
+                files = aiGeneratedFiles;
+            } else if (filter === 'shared') {
+                files = sharedFiles;
+            } else {
+                files = [...aiGeneratedFiles, ...sharedFiles];
+            }
+
+            // 按时间倒序排序
+            files.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div style="color: #fff; text-align: center; padding: 20px;">
+                        ${filter === 'ai' ? '暂无AI生成的文件' :
+                          filter === 'shared' ? '暂无共享文件' :
+                          '暂无文件，使用AI生成文件或上传文件后将显示在这里'}
+                    </div>
+                `;
+                return;
+            }
+
+            // 为文件列表中的每个文件生成唯一ID
+            files.forEach((file, index) => {
+                file.downloadId = 'file-dl-' + Date.now() + '-' + index;
+                pendingFileDownloads.set(file.downloadId, {
+                    url: file.url,
+                    filename: file.filename,
+                    ossKey: file.ossKey || ''
+                });
+            });
+
+            container.innerHTML = files.map(file => `
+                <div style="background: #2a2a2a; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+                    <div style="font-size: 32px;">
+                        ${getFileIconByName(file.filename)}
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${escapeHtml(file.filename)}
+                        </div>
+                        <div style="font-size: 12px; color: #fff; margin-top: 4px;">
+                            ${file.type === 'ai' ? '🤖 AI生成' : '📎 共享文件'} ·
+                            ${file.sender} ·
+                            ${new Date(file.timestamp).toLocaleString()}
+                            ${file.size ? ' · ' + formatFileSize(file.size) : ''}
+                        </div>
+                    </div>
+                    <button data-download-id="${file.downloadId}" class="file-download-btn"
+                            style="background: #666; color: #000; padding: 8px 16px; border-radius: 6px; border: none; font-size: 13px; font-weight: bold; white-space: nowrap; cursor: pointer;">
+                        ⬇️ 下载
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // 根据文件名获取图标
+        function getFileIconByName(filename) {
+            const ext = filename.split('.').pop()?.toLowerCase();
+            const icons = {
+                'md': '📝',
+                'txt': '📄',
+                'json': '📋',
+                'js': '📜',
+                'ts': '📘',
+                'html': '🌐',
+                'css': '🎨',
+                'py': '🐍',
+                'java': '☕',
+                'go': '🔵',
+                'rs': '🦀',
+                'pdf': '📕',
+                'doc': '📘',
+                'docx': '📘',
+                'xls': '📗',
+                'xlsx': '📗',
+                'ppt': '📙',
+                'pptx': '📙',
+                'zip': '📦',
+                'rar': '📦',
+                '7z': '📦',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'mp4': '🎬',
+                'mp3': '🎵',
+                'wav': '🎵'
+            };
+            return icons[ext] || '📄';
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 处理下载URL刷新响应
+        async function handleDownloadUrlRefreshed(data) {
+            const { requestId, downloadUrl } = data;
+            const pendingRequest = pendingDownloadRequests.get(requestId);
+
+            if (pendingRequest) {
+                // 清除超时定时器
+                if (pendingRequest.timeoutId) {
+                    clearTimeout(pendingRequest.timeoutId);
+                }
+
+                // 执行下载
+                if (downloadUrl) {
+                    try {
+                        await downloadFile(downloadUrl, pendingRequest.filename);
+                    } catch (error) {
+                        console.error('[Download] Failed after URL refresh:', error);
+                        addSystemMessage(`下载失败: ${error.message}`, 'error');
+                    }
+                }
+
+                // 从待处理列表中移除
+                pendingDownloadRequests.delete(requestId);
+            }
+        }
+
+        // 处理文件下载
+        async function handleFileDownload(url, filename, ossKey) {
+            console.log(`[Download] handleFileDownload called: url=${url.substring(0, 50)}..., filename=${filename}, ossKey=${ossKey ? 'present' : 'missing'}`);
+
+            try {
+                // 本地文件直接下载
+                if (url.startsWith('/downloads/')) {
+                    console.log('[Download] Local file detected, downloading directly');
+                    await downloadFile(url, filename);
+                    return;
+                }
+
+                // OSS文件：检查URL是否已过期
+                try {
+                    const urlObj = new URL(url);
+                    const expires = urlObj.searchParams.get('Expires');
+                    const now = Math.floor(Date.now() / 1000);
+
+                    if (expires && parseInt(expires) < now) {
+                        // URL已过期，需要刷新
+                        console.log(`[Download] URL expired (expires=${expires}, now=${now}), requesting refresh...`);
+                        await refreshAndDownload(url, filename, ossKey);
+                    } else {
+                        // URL未过期，尝试直接下载
+                        console.log(`[Download] URL valid (expires=${expires}), downloading directly`);
+                        await downloadFile(url, filename);
+                    }
+                } catch (urlError) {
+                    // URL格式错误或无法解析，尝试直接下载或刷新
+                    console.log('[Download] URL check failed:', urlError);
+                    if (ossKey) {
+                        console.log('[Download] Has ossKey, requesting refresh...');
+                        await refreshAndDownload(url, filename, ossKey);
+                    } else {
+                        console.log('[Download] No ossKey, trying direct download...');
+                        await downloadFile(url, filename);
+                    }
+                }
+            } catch (error) {
+                console.error('[Download] handleFileDownload error:', error);
+                log(`下载失败: ${error.message}`);
+                addSystemMessage(`下载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 请求刷新URL并下载
+        async function refreshAndDownload(url, filename, ossKey) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('WebSocket未连接，无法刷新下载链接');
+                addSystemMessage('无法下载文件：连接已断开，请刷新页面后重试', 'error');
+                return;
+            }
+
+            const requestId = 'dl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+            // 存储待处理请求
+            const timeoutId = setTimeout(() => {
+                pendingDownloadRequests.delete(requestId);
+                log('下载URL刷新超时');
+                addSystemMessage('文件下载失败：请求超时', 'error');
+            }, 10000);
+
+            pendingDownloadRequests.set(requestId, {
+                filename,
+                url,
+                timeoutId
+            });
+
+            // 发送刷新请求
+            ws.send(JSON.stringify({
+                type: 'refresh_download_url',
+                ossKey: ossKey || url,
+                requestId
+            }));
+        }
+
+        // 执行文件下载
+        async function downloadFile(url, filename) {
+            console.log(`[Download] Downloading file: ${filename} from ${url.substring(0, 100)}...`);
+            log(`开始下载: ${filename}`);
+
+            // 本地文件使用fetch下载（避免HTTPS页面的混合内容问题）
+            if (url.startsWith('/')) {
+                console.log(`[Download] Fetching local file: ${url}`);
+                log(`正在下载本地文件...`);
+
+                try {
+                    const response = await fetch(url);
+                    console.log(`[Download] Local file response status: ${response.status}`);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const blob = await response.blob();
+                    console.log(`[Download] Local file blob size: ${blob.size}`);
+
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const decodedFilename = decodeURIComponent(filename || 'download');
+
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = decodedFilename;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(blobUrl);
+                    }, 100);
+
+                    log(`下载完成: ${decodedFilename}`);
+                } catch (error) {
+                    console.error('[Download] Local file download failed:', error);
+                    log(`下载失败: ${error.message}`);
+                    throw error;
+                }
+                return;
+            }
+
+            // OSS文件：将HTTP转换为HTTPS（解决混合内容问题）
+            if (url.startsWith('http://')) {
+                url = url.replace('http://', 'https://');
+                console.log(`[Download] Converted to HTTPS: ${url.substring(0, 100)}...`);
+            }
+
+            // OSS文件使用fetch下载（处理跨域）
+            try {
+                log('正在获取文件...');
+                console.log(`[Download] Fetching from: ${url.substring(0, 100)}...`);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+
+                console.log(`[Download] Response status: ${response.status}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                console.log(`[Download] Blob size: ${blob.size} bytes, type: ${blob.type}`);
+
+                if (blob.size === 0) {
+                    throw new Error('下载的文件为空');
+                }
+
+                const blobUrl = window.URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename || 'download';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // 释放blob URL
+                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+
+                log(`下载完成: ${filename}`);
+            } catch (error) {
+                console.error('[Download] Failed:', error);
+                log(`下载失败: ${error.message}`);
+
+                // 如果fetch失败（如CORS错误或网络问题），尝试直接打开
+                if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
+                    log('尝试在新窗口打开文件...');
+                    addSystemMessage('自动下载失败，正在尝试在新窗口打开文件...', 'warning');
+                    window.open(url, '_blank');
+                } else {
+                    throw error;
+                }
+            }
+        }
+
+        // 等待服务器返回带 OSS URL 的消息
+        function waitForUploadUrl(fileId) {
+            return new Promise((resolve) => {
+                console.log(`[Upload] Waiting for OSS URL for fileId: ${fileId}`);
+                let checkCount = 0;
+
+                const checkInterval = setInterval(() => {
+                    checkCount++;
+                    const messages = document.querySelectorAll('.message');
+                    console.log(`[Upload] Checking messages (${checkCount}): found ${messages.length} messages`);
+
+                    for (let msg of messages) {
+                        const dataAttr = msg.getAttribute('data-file-id');
+                        const urlAttr = msg.getAttribute('data-oss-url');
+
+                        if (dataAttr === fileId) {
+                            console.log(`[Upload] Found message with matching fileId, ossUrl: ${urlAttr ? 'present' : 'missing'}`);
+                            if (urlAttr) {
+                                clearInterval(checkInterval);
+                                resolve(urlAttr);
+                                return;
+                            }
+                        }
+                    }
+                }, 500);
+
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    console.log(`[Upload] Timeout waiting for OSS URL after 10 seconds`);
+                    resolve(null);
+                }, 10000);
+            });
+        }
+
+        // 发送文件上传完成消息
+        function sendFileUploadedMessage(fileId, fileName, fileSize, mimeType) {
+            const message = {
+                type: 'message',
+                message: {
+                    id: 'msg-' + Date.now(),
+                    type: 'text',
+                    content: `文件上传完成: ${getFileIcon(mimeType)} ${fileName} (${formatFileSize(fileSize)})`,
+                    mentions: [],
+                    mentionsAI: false
+                }
+            };
+
+            ws.send(JSON.stringify(message));
+        }
+
+        // 取消上传
+        function cancelUpload() {
+            if (currentUpload) {
+                currentUpload.abort();
+                currentUpload = null;
+                log('上传已取消');
+
+                const progressDiv = document.getElementById('upload-progress');
+                const progressBar = document.getElementById('upload-bar');
+                progressDiv.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        // 清空聊天
+        function clearChat() {
+            document.getElementById('chat-container').innerHTML = `
+                <div class="load-more-container" id="load-more-container" style="display: none;">
+                    <button class="load-more-btn" id="load-more-btn" onclick="loadMoreHistory()">
+                        加载更多历史消息
+                    </button>
+                </div>
+            `;
+            // 清空侧边栏
+            document.getElementById('mentions-list').innerHTML = '<div class="sidebar-empty">暂无@提及消息</div>';
+            document.getElementById('ai-responses-list').innerHTML = '<div class="sidebar-empty">暂无AI回复</div>';
+            chatHistory = [];
+            oldestMessageTime = null;
+            hasMoreHistory = true;
+            initialHistoryLoaded = false;
+        }
+
+        // 页面加载完成
+        window.onload = () => {
+            log('页面加载完成');
+
+            // 设置文件下载事件委托
+            setupFileDownloadDelegation();
+
+            // 自动填充服务器地址
+            autoFillServerUrl();
+
+            // 检查 HTTPS
+            const isHTTPS = window.location.protocol === 'https:';
+            const httpsWarningEl = document.getElementById('voice-https-warning');
+            const httpsOkEl = document.getElementById('voice-https-ok');
+
+            if (isHTTPS) {
+                log('✅ 已使用 HTTPS，语音功能完全可用');
+                if (httpsWarningEl) httpsWarningEl.style.display = 'none';
+                if (httpsOkEl) httpsOkEl.style.display = 'block';
+            } else {
+                log('⚠️ 当前使用 HTTP，安卓浏览器可能无法使用语音功能');
+                if (httpsWarningEl) httpsWarningEl.style.display = 'block';
+                if (httpsOkEl) httpsOkEl.style.display = 'none';
+            }
+
+            // 记录浏览器信息
+            console.log('[Voice] Browser info:', {
+                userAgent: navigator.userAgent,
+                protocol: window.location.protocol,
+                isSecureContext: window.isSecureContext,
+                mediaDevices: !!navigator.mediaDevices,
+                webkitAudioContext: !!window.webkitAudioContext
+            });
+
+            // 显示连接提示
+            const wsUrl = getDefaultWsUrl();
+            log(`自动检测到服务器地址: ${wsUrl}`);
+            log(`当前协议: ${window.location.protocol}`);
+        };
+
+        // ===========================================================================
+        // 语音聊天功能 - 改造版（持续采集 + VAD 检测）
+        // ===========================================================================
+
+        let voiceChat = {
+            isJoined: false,
+            isSpeaking: false,  // 本地是否检测到语音（VAD）
+            isServerSpeaking: false,  // 服务端确认的发言状态
+            audioContext: null,
+            mediaStream: null,
+            audioProcessor: null,
+            analyser: null,
+            participants: new Map(),
+            transcripts: [],
+            currentTranscripts: new Map(), // 当前正在进行的转录（按userId）
+            // VAD 配置
+            vadConfig: {
+                energyThreshold: 0.01,      // 能量阈值（0-1之间）
+                silenceFrames: 20,          // 连续多少帧静音认为是结束
+                minSpeechFrames: 5,         // 最少多少帧才算有效语音
+                frameSize: 4096,            // 每帧样本数
+            },
+            vadState: {
+                energyHistory: [],
+                silenceCount: 0,
+                speechCount: 0,
+                isSpeech: false,
+            },
+            // Web Speech API (浏览器本地语音识别)
+            useWebSpeech: true,  // 默认启用Web Speech API作为ASR替代方案
+            webSpeechRecognition: null,
+            webSpeechTranscript: '',
+            isWebSpeechActive: false,
+            // 音频播放相关（接收其他用户音频）
+            playbackAudioContext: null,  // 用于播放的独立AudioContext
+            audioPlaybackBuffers: new Map(),  // 用户音频缓冲区 Map<userId, ArrayBuffer[]>
+            audioPlaybackQueue: new Map(),    // 音频播放队列 Map<userId, AudioBuffer[]>
+            isPlayingAudio: new Map(),        // 是否正在播放 Map<userId, boolean>
+            lastAudioTime: new Map(),         // 最后接收音频时间 Map<userId, number>
+            audioPlaybackEnabled: true,       // 是否启用音频播放
+        };
+
+        // 检查浏览器是否支持音频录制
+        function isAudioSupported() {
+            // 检查是否支持 getUserMedia（处理各种前缀）
+            const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ||
+                                   !!(navigator.getUserMedia) ||
+                                   !!(navigator.webkitGetUserMedia) ||
+                                   !!(navigator.mozGetUserMedia);
+
+            // 检查是否支持 Web Audio API
+            const hasWebAudio = !!(window.AudioContext || window.webkitAudioContext);
+
+            console.log('[Voice] Audio support check:', {
+                mediaDevices: !!navigator.mediaDevices,
+                getUserMedia: hasGetUserMedia,
+                webAudio: hasWebAudio,
+                protocol: window.location.protocol,
+                isSecureContext: window.isSecureContext
+            });
+
+            return hasGetUserMedia && hasWebAudio;
+        }
+
+        // 检查是否支持 Web Speech API
+        function isWebSpeechSupported() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            return !!SpeechRecognition;
+        }
+
+        // 初始化 Web Speech API
+        function initWebSpeech() {
+            if (!voiceChat.useWebSpeech) return false;
+            if (!isWebSpeechSupported()) {
+                console.log('[WebSpeech] Not supported in this browser');
+                return false;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            voiceChat.webSpeechRecognition = new SpeechRecognition();
+
+            // 配置语音识别
+            voiceChat.webSpeechRecognition.continuous = true;
+            voiceChat.webSpeechRecognition.interimResults = true;
+            voiceChat.webSpeechRecognition.lang = 'zh-CN'; // 设置中文识别
+
+            voiceChat.webSpeechRecognition.onstart = () => {
+                console.log('[WebSpeech] Recognition started');
+                voiceChat.isWebSpeechActive = true;
+            };
+
+            voiceChat.webSpeechRecognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // 处理识别结果
+                if (finalTranscript) {
+                    console.log('[WebSpeech] Final transcript:', finalTranscript);
+                    handleWebSpeechResult(finalTranscript, true);
+                } else if (interimTranscript) {
+                    handleWebSpeechResult(interimTranscript, false);
+                }
+            };
+
+            voiceChat.webSpeechRecognition.onerror = (event) => {
+                if (event.error !== 'no-speech' && event.error !== 'aborted') {
+                    console.error('[WebSpeech] Error:', event.error);
+                }
+                voiceChat.isWebSpeechActive = false;
+
+                // 如果还在语音聊天中，尝试重启识别
+                if (voiceChat.isJoined && voiceChat.useWebSpeech) {
+                    setTimeout(() => {
+                        if (voiceChat.isJoined) startWebSpeech();
+                    }, 500);
+                }
+            };
+
+            voiceChat.webSpeechRecognition.onend = () => {
+                console.log('[WebSpeech] Recognition ended');
+                voiceChat.isWebSpeechActive = false;
+
+                // 如果还在语音聊天中，自动重启
+                if (voiceChat.isJoined && voiceChat.useWebSpeech) {
+                    setTimeout(() => {
+                        if (voiceChat.isJoined) startWebSpeech();
+                    }, 100);
+                }
+            };
+
+            return true;
+        }
+
+        // 启动 Web Speech 识别
+        function startWebSpeech() {
+            if (!voiceChat.useWebSpeech || !voiceChat.webSpeechRecognition) return;
+            if (voiceChat.isWebSpeechActive) return;
+
+            try {
+                voiceChat.webSpeechRecognition.start();
+            } catch (e) {
+                console.error('[WebSpeech] Failed to start:', e);
+            }
+        }
+
+        // 停止 Web Speech 识别
+        function stopWebSpeech() {
+            if (!voiceChat.webSpeechRecognition) return;
+            if (!voiceChat.isWebSpeechActive) return;
+
+            try {
+                voiceChat.webSpeechRecognition.stop();
+            } catch (e) {
+                console.error('[WebSpeech] Failed to stop:', e);
+            }
+        }
+
+        // 处理 Web Speech 识别结果
+        function handleWebSpeechResult(text, isFinal) {
+            if (!text.trim()) return;
+
+            // 显示转录结果
+            addVoiceTranscript({
+                id: 'webspeech_' + Date.now(),
+                userId: userId,
+                userName: currentUser?.name || '我',
+                text: text.trim(),
+                timestamp: Date.now(),
+                isFinal: isFinal,
+            });
+
+            // 如果是最终结果，发送到服务器广播给其他用户
+            if (isFinal && ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'voice_transcript',
+                    transcript: {
+                        text: text.trim(),
+                        isFinal: true,
+                        source: 'webspeech'  // 标记来源，避免重复显示
+                    }
+                }));
+            }
+        }
+
+        // 获取 getUserMedia 函数（处理浏览器兼容性）
+        function getUserMediaFunction() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                return navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+            }
+            const legacyGetUserMedia = navigator.getUserMedia ||
+                                       navigator.webkitGetUserMedia ||
+                                       navigator.mozGetUserMedia;
+            if (legacyGetUserMedia) {
+                return function(constraints) {
+                    return new Promise((resolve, reject) => {
+                        legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+                    });
+                };
+            }
+            return null;
+        }
+
+        // 计算音频能量（用于VAD）
+        function calculateAudioEnergy(floatData) {
+            let sum = 0;
+            for (let i = 0; i < floatData.length; i++) {
+                sum += floatData[i] * floatData[i];
+            }
+            return Math.sqrt(sum / floatData.length);
+        }
+
+        // VAD 检测
+        function detectVoiceActivity(floatData) {
+            const energy = calculateAudioEnergy(floatData);
+            const config = voiceChat.vadConfig;
+            const state = voiceChat.vadState;
+
+            // 更新历史
+            state.energyHistory.push(energy);
+            if (state.energyHistory.length > 10) {
+                state.energyHistory.shift();
+            }
+
+            // 使用平滑后的能量值
+            const avgEnergy = state.energyHistory.reduce((a, b) => a + b, 0) / state.energyHistory.length;
+            const isCurrentlySpeech = avgEnergy > config.energyThreshold;
+
+            if (isCurrentlySpeech) {
+                state.speechCount++;
+                state.silenceCount = 0;
+
+                if (!state.isSpeech && state.speechCount >= config.minSpeechFrames) {
+                    state.isSpeech = true;
+                    console.log('[VAD] Speech started, energy:', avgEnergy.toFixed(4));
+                }
+            } else {
+                state.silenceCount++;
+
+                if (state.isSpeech && state.silenceCount >= config.silenceFrames) {
+                    state.isSpeech = false;
+                    state.speechCount = 0;
+                    console.log('[VAD] Speech ended, energy:', avgEnergy.toFixed(4));
+                }
+            }
+
+            return state.isSpeech;
+        }
+
+        // 加入语音聊天 - 立即开始持续音频采集
+        async function joinVoiceChat() {
+            // 检查浏览器支持
+            if (!isAudioSupported()) {
+                const protocol = window.location.protocol;
+                const isSecure = window.isSecureContext;
+
+                let errorMsg = '您的浏览器不支持语音功能。';
+                if (protocol !== 'https:' && !isSecure) {
+                    errorMsg += '\n\n安卓浏览器需要使用 HTTPS 才能访问麦克风。';
+                    errorMsg += '\n请使用 https:// 访问此页面。';
+                }
+
+                alert(errorMsg);
+                console.error('[Voice] Browser not supported:', {
+                    protocol,
+                    isSecureContext: isSecure,
+                    userAgent: navigator.userAgent
+                });
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接服务器');
+                return;
+            }
+
+            // 检查 HTTPS（安卓必需）
+            if (window.location.protocol !== 'https:' && !window.isSecureContext) {
+                alert('安卓浏览器需要使用 HTTPS 才能访问麦克风。\n请使用 https:// 访问此页面。');
+                return;
+            }
+
+            try {
+                const getUserMedia = getUserMediaFunction();
+                if (!getUserMedia) {
+                    throw new Error('getUserMedia not available');
+                }
+
+                // 请求麦克风权限
+                voiceChat.mediaStream = await getUserMedia({
+                    audio: {
+                        sampleRate: 16000,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                    }
+                });
+
+                log('麦克风权限已获取，正在初始化音频...');
+
+                // 立即初始化音频处理（持续采集）
+                await initContinuousAudioProcessing();
+
+                // 初始化 Web Speech API（浏览器本地语音识别）
+                if (initWebSpeech()) {
+                    log('浏览器语音识别已启用');
+                    startWebSpeech();
+                } else {
+                    log('浏览器语音识别不可用，仅使用服务端语音识别');
+                }
+
+                // 发送加入语音聊天请求
+                ws.send(JSON.stringify({ type: 'voice_join' }));
+
+            } catch (error) {
+                console.error('获取麦克风权限失败:', error);
+
+                let errorMsg = '无法访问麦克风，请检查权限设置';
+                if (error.name === 'NotAllowedError') {
+                    errorMsg = '麦克风权限被拒绝。请在浏览器设置中允许访问麦克风。';
+                } else if (error.name === 'NotFoundError') {
+                    errorMsg = '未找到麦克风设备。';
+                } else if (error.name === 'NotSupportedError') {
+                    errorMsg = '浏览器不支持该音频格式。';
+                }
+
+                alert(errorMsg);
+            }
+        }
+
+        // 离开语音聊天
+        function leaveVoiceChat() {
+            if (!voiceChat.isJoined) return;
+
+            // 停止音频流
+            if (voiceChat.mediaStream) {
+                voiceChat.mediaStream.getTracks().forEach(track => track.stop());
+                voiceChat.mediaStream = null;
+            }
+
+            // 关闭音频上下文
+            if (voiceChat.audioContext) {
+                voiceChat.audioContext.close();
+                voiceChat.audioContext = null;
+            }
+
+            // 关闭播放音频上下文
+            if (voiceChat.playbackAudioContext) {
+                voiceChat.playbackAudioContext.close();
+                voiceChat.playbackAudioContext = null;
+            }
+
+            // 重置状态
+            voiceChat.audioProcessor = null;
+            voiceChat.analyser = null;
+            voiceChat.isSpeaking = false;
+            voiceChat.isServerSpeaking = false;
+
+            // 清理音频播放相关状态
+            voiceChat.audioPlaybackBuffers.clear();
+            voiceChat.audioPlaybackQueue.clear();
+            voiceChat.isPlayingAudio.clear();
+            voiceChat.lastAudioTime.clear();
+
+            // 停止 Web Speech 识别
+            stopWebSpeech();
+
+            // 发送离开请求
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'voice_leave' }));
+            }
+
+            // 重置状态
+            voiceChat.isJoined = false;
+            voiceChat.participants.clear();
+            voiceChat.transcripts = [];
+            voiceChat.currentTranscripts.clear();
+
+            // 重置 VAD
+            voiceChat.vadState = {
+                energyHistory: [],
+                silenceCount: 0,
+                speechCount: 0,
+                isSpeech: false,
+            };
+
+            // 更新UI
+            updateVoiceChatUI();
+            log('已离开语音聊天');
+        }
+
+        // 初始化持续音频处理（带 VAD）
+        async function initContinuousAudioProcessing() {
+            if (!voiceChat.mediaStream) return;
+
+            // 创建音频上下文
+            voiceChat.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
+            });
+
+            const source = voiceChat.audioContext.createMediaStreamSource(voiceChat.mediaStream);
+
+            // 创建分析器用于 VAD
+            voiceChat.analyser = voiceChat.audioContext.createAnalyser();
+            voiceChat.analyser.fftSize = 256;
+            source.connect(voiceChat.analyser);
+
+            // 创建脚本处理器（用于获取原始音频数据）
+            const bufferSize = voiceChat.vadConfig.frameSize;
+            voiceChat.audioProcessor = voiceChat.audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+            voiceChat.audioProcessor.onaudioprocess = (event) => {
+                if (!voiceChat.isJoined) return;
+
+                // 获取音频数据
+                const inputData = event.inputBuffer.getChannelData(0);
+
+                // 检查音频数据是否全为0（调试）
+                let maxVal = 0;
+                let sumVal = 0;
+                for (let i = 0; i < inputData.length; i++) {
+                    const val = Math.abs(inputData[i]);
+                    maxVal = Math.max(maxVal, val);
+                    sumVal += val;
+                }
+                const avgVal = sumVal / inputData.length;
+
+                // 每100帧打印一次调试信息
+                if (!voiceChat.frameCount) voiceChat.frameCount = 0;
+                voiceChat.frameCount++;
+                if (voiceChat.frameCount % 100 === 0) {
+                    console.log(`[Audio Debug] Frame ${voiceChat.frameCount}: max=${maxVal.toFixed(4)}, avg=${avgVal.toFixed(4)}, length=${inputData.length}`);
+                }
+
+                // VAD 检测
+                const isSpeech = detectVoiceActivity(inputData);
+
+                // 如果本地 VAD 状态变化，更新 UI
+                if (isSpeech !== voiceChat.isSpeaking) {
+                    voiceChat.isSpeaking = isSpeech;
+                    updateVoiceSpeakingUI(isSpeech);
+                }
+
+                // 转换为 16-bit PCM
+                const pcmData = floatTo16BitPCM(inputData);
+
+                // 转换为 Base64
+                const base64Audio = arrayBufferToBase64(pcmData);
+
+                // 发送给服务器（持续发送，包含 VAD 结果）
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'voice_continuous_audio',
+                        audioData: base64Audio,
+                        isSpeech: isSpeech
+                    }));
+                }
+            };
+
+            source.connect(voiceChat.audioProcessor);
+            voiceChat.audioProcessor.connect(voiceChat.audioContext.destination);
+
+            log('持续音频采集已启动（带 VAD 检测）');
+        }
+
+        // Float32 转 16-bit PCM
+        function floatTo16BitPCM(floatData) {
+            const buffer = new ArrayBuffer(floatData.length * 2);
+            const view = new DataView(buffer);
+
+            for (let i = 0; i < floatData.length; i++) {
+                let s = Math.max(-1, Math.min(1, floatData[i]));
+                s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                view.setInt16(i * 2, s, true);
+            }
+
+            return buffer;
+        }
+
+        // ArrayBuffer 转 Base64
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        // 触发 AI 分析
+        function voiceAIAnalyze() {
+            if (!voiceChat.isJoined) {
+                alert('请先加入语音聊天');
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+            ws.send(JSON.stringify({ type: 'voice_ai_analyze' }));
+            log('请求AI分析语音聊天内容');
+        }
+
+        // 更新语音聊天 UI
+        function updateVoiceChatUI() {
+            const statusEl = document.getElementById('voice-status');
+            const joinBtn = document.getElementById('btn-voice-join');
+            const leaveBtn = document.getElementById('btn-voice-leave');
+            const controlsEl = document.getElementById('voice-controls');
+            const transcriptArea = document.getElementById('voice-transcript-area');
+            const aiBtn = document.getElementById('btn-voice-ai');
+
+            if (voiceChat.isJoined) {
+                statusEl.className = 'status status-connected';
+                statusEl.textContent = '已连接';
+                joinBtn.classList.add('hidden');
+                leaveBtn.classList.remove('hidden');
+                controlsEl.style.display = 'block';
+                transcriptArea.style.display = 'block';
+                aiBtn.disabled = false;
+            } else {
+                statusEl.className = 'status status-disconnected';
+                statusEl.textContent = '未连接';
+                joinBtn.classList.remove('hidden');
+                leaveBtn.classList.add('hidden');
+                controlsEl.style.display = 'none';
+                transcriptArea.style.display = 'none';
+                aiBtn.disabled = true;
+                document.getElementById('voice-transcript-content').innerHTML = '';
+                voiceChat.transcripts = [];
+            }
+
+            updateVoiceParticipantsUI();
+        }
+
+        // 更新录音状态 UI
+        function updateVoiceSpeakingUI(isSpeaking) {
+            const indicator = document.getElementById('voice-speaking-indicator');
+            const vadDot = document.getElementById('vad-status-dot');
+            const vadText = document.getElementById('vad-status-text');
+
+            if (isSpeaking) {
+                indicator.style.display = 'flex';
+                if (vadDot) {
+                    vadDot.style.background = '#666';
+                    vadDot.style.boxShadow = '0 0 10px #666';
+                }
+                if (vadText) vadText.textContent = '检测到语音';
+                if (vadText) vadText.style.color = '#666';
+            } else {
+                indicator.style.display = 'none';
+                if (vadDot) {
+                    vadDot.style.background = '#888';
+                    vadDot.style.boxShadow = 'none';
+                }
+                if (vadText) vadText.textContent = '未检测到语音';
+                if (vadText) vadText.style.color = '#888';
+            }
+        }
+
+        // 更新参与者列表 UI
+        function updateVoiceParticipantsUI() {
+            const container = document.getElementById('voice-participants');
+
+            if (!voiceChat.isJoined || voiceChat.participants.size === 0) {
+                container.innerHTML = '<span style="color: #fff; font-size: 12px;">暂无参与者</span>';
+                return;
+            }
+
+            container.innerHTML = Array.from(voiceChat.participants.values()).map(p => {
+                const isSpeaking = p.isSpeaking;
+                return `
+                    <div class="voice-participant ${isSpeaking ? 'speaking' : ''}">
+                        <span>${isSpeaking ? '🔊' : '🎤'}</span>
+                        <span>${p.userName}</span>
+                        ${isSpeaking ? '<span style="color: #fff;">(发言中)</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 添加转录文本
+        function addVoiceTranscript(transcript) {
+            // 如果是最终结果，移除之前的临时结果
+            if (transcript.isFinal) {
+                const tempIndex = voiceChat.transcripts.findIndex(t =>
+                    t.userId === transcript.userId && !t.isFinal
+                );
+                if (tempIndex >= 0) {
+                    voiceChat.transcripts.splice(tempIndex, 1);
+                }
+            }
+
+            voiceChat.transcripts.push(transcript);
+
+            // 只保留最近30条
+            if (voiceChat.transcripts.length > 30) {
+                voiceChat.transcripts.shift();
+            }
+
+            renderVoiceTranscripts();
+        }
+
+        // 更新当前转录（非最终结果）
+        function updateCurrentTranscript(transcript) {
+            const key = transcript.userId;
+            voiceChat.currentTranscripts.set(key, transcript);
+            renderVoiceTranscripts();
+        }
+
+        // 渲染转录文本
+        function renderVoiceTranscripts() {
+            const container = document.getElementById('voice-transcript-content');
+
+            // 合并历史转录和当前转录
+            const allTranscripts = [...voiceChat.transcripts];
+
+            // 添加当前正在进行的转录
+            voiceChat.currentTranscripts.forEach((transcript, userId) => {
+                // 检查是否已经有该用户的最终结果
+                const hasFinal = voiceChat.transcripts.some(t =>
+                    t.userId === userId && t.isFinal &&
+                    Math.abs(t.timestamp - transcript.timestamp) < 5000
+                );
+                if (!hasFinal) {
+                    allTranscripts.push(transcript);
+                }
+            });
+
+            // 按时间排序
+            allTranscripts.sort((a, b) => a.timestamp - b.timestamp);
+
+            container.innerHTML = allTranscripts.map(t => `
+                <div class="voice-transcript-item ${t.isFinal ? 'voice-transcript-final' : ''}">
+                    <span class="voice-transcript-speaker">${t.userName}:</span>
+                    <span class="voice-transcript-text">${t.text}${!t.isFinal ? ' <span style="color: #fff;">(识别中...)</span>' : ''}</span>
+                </div>
+            `).join('');
+
+            // 滚动到底部
+            container.parentElement.scrollTop = container.parentElement.scrollHeight;
+        }
+
+        // 处理语音聊天服务器消息
+        function handleVoiceMessage(data) {
+            switch (data.type) {
+                case 'voice.join':
+                    if (data.success) {
+                        // 自己加入成功
+                        voiceChat.isJoined = true;
+                        updateVoiceChatUI();
+                        log('已加入语音聊天');
+                    } else if (data.userId && data.userId !== userId) {
+                        // 其他用户加入
+                        voiceChat.participants.set(data.userId, {
+                            userId: data.userId,
+                            userName: data.userName,
+                            isSpeaking: false
+                        });
+                        updateVoiceParticipantsUI();
+                        log(`${data.userName || '有人'} 加入了语音聊天`);
+                    }
+                    break;
+
+                case 'voice.asr_ready':
+                    log('语音识别服务已就绪');
+                    break;
+
+                case 'voice.leave':
+                    if (data.success) {
+                        // 自己离开成功
+                        voiceChat.isJoined = false;
+                        voiceChat.participants.clear();
+                        updateVoiceChatUI();
+                        log('已离开语音聊天');
+                    } else if (data.userId && data.userId !== userId) {
+                        // 其他用户离开
+                        voiceChat.participants.delete(data.userId);
+                        updateVoiceParticipantsUI();
+                        log(`${data.userName || '有人'} 离开了语音聊天`);
+                    }
+                    break;
+
+                case 'voice.speaking.start':
+                    // 服务端确认某用户开始发言
+                    voiceChat.participants.set(data.userId, {
+                        userId: data.userId,
+                        userName: data.userName,
+                        isSpeaking: true
+                    });
+                    updateVoiceParticipantsUI();
+                    if (data.userId !== userId) {
+                        log(`${data.userName} 开始发言`);
+                    }
+                    break;
+
+                case 'voice.speaking.end':
+                    // 服务端确认某用户停止发言
+                    const p = voiceChat.participants.get(data.userId);
+                    if (p) {
+                        p.isSpeaking = false;
+                    }
+                    updateVoiceParticipantsUI();
+                    break;
+
+                case 'voice.transcript':
+                    // 实时转录结果（非最终）
+                    updateCurrentTranscript(data.transcript);
+                    break;
+
+                case 'voice.transcript.final':
+                    // 最终转录结果
+                    voiceChat.currentTranscripts.delete(data.userId);
+                    addVoiceTranscript(data.transcript);
+                    log(`[语音] ${data.transcript.userName}: ${data.transcript.text}`);
+
+                    // 将语音转录添加到主聊天室对话中
+                    const voiceMessage = {
+                        id: data.transcript.id || `voice_${Date.now()}`,
+                        type: 'text',
+                        content: `🎤 ${data.transcript.text}`,
+                        senderId: data.transcript.userId,
+                        senderName: data.transcript.userName || data.userName || '未知用户',
+                        senderRole: 'member',
+                        timestamp: data.transcript.timestamp || Date.now(),
+                        isVoiceTranscript: true
+                    };
+                    addMessage(voiceMessage, data.transcript.userId === userId);
+                    break;
+
+                case 'voice.ai_analyze':
+                    if (data.status === 'analyzing') {
+                        addSystemMessage(`🤖 ${data.triggeredByName || '有人'} 请求AI分析语音内容...`);
+                        log('AI正在分析语音内容...');
+                    } else if (data.status === 'completed') {
+                        log('AI分析完成');
+                    } else if (data.status === 'error') {
+                        addSystemMessage(`AI分析失败: ${data.error}`);
+                        log(`AI分析失败: ${data.error}`);
+                    }
+                    break;
+
+                case 'voice.error':
+                    console.error('语音聊天错误:', data.error, data.message);
+                    const errorEl = document.getElementById('voice-error');
+                    errorEl.textContent = data.message || '语音聊天出错';
+                    errorEl.style.display = 'block';
+                    setTimeout(() => {
+                        errorEl.style.display = 'none';
+                    }, 5000);
+                    break;
+
+                case 'voice.status':
+                    if (data.room) {
+                        // 更新房间状态
+                        data.room.participants?.forEach(p => {
+                            voiceChat.participants.set(p.userId, p);
+                        });
+                        updateVoiceParticipantsUI();
+                    }
+                    break;
+
+                case 'voice.audio':
+                    // 收到其他用户的音频数据，播放出来
+                    handleIncomingAudio(data);
+                    break;
+            }
+        }
+
+        // ===========================================================================
+        // 音频接收和播放功能（语音对讲）
+        // ===========================================================================
+
+        /**
+         * 处理收到的音频数据
+         */
+        function handleIncomingAudio(data) {
+            console.log(`[Audio Playback] handleIncomingAudio: ENTER - userId=${data.userId}, userName=${data.userName}, hasAudioData=${!!data.audioData}, isSpeech=${data.isSpeech}`);
+
+            if (!voiceChat.audioPlaybackEnabled) {
+                console.log(`[Audio Playback] handleIncomingAudio: SKIPPED - audioPlaybackEnabled=false`);
+                return;
+            }
+            if (!data.audioData || !data.userId) {
+                console.log(`[Audio Playback] handleIncomingAudio: SKIPPED - missing audioData or userId`);
+                return;
+            }
+
+            const senderId = data.userId;
+            const senderName = data.userName || '未知用户';
+
+            // 不播放自己的音频（避免回声）
+            if (senderId === userId) {
+                console.log(`[Audio Playback] handleIncomingAudio: SKIPPED - sender is self (echo prevention)`);
+                return;
+            }
+
+            console.log(`[Audio Playback] handleIncomingAudio: processing audio from ${senderName} (${senderId}), audioDataLength=${data.audioData.length}`);
+
+            try {
+                // Base64 解码为 ArrayBuffer
+                console.log(`[Audio Playback] handleIncomingAudio: decoding base64 audio data...`);
+                const binary = atob(data.audioData);
+                console.log(`[Audio Playback] handleIncomingAudio: base64 decoded, binary length=${binary.length}`);
+
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                console.log(`[Audio Playback] handleIncomingAudio: converted to Uint8Array, length=${bytes.length}`);
+
+                // 将 16-bit PCM 转换为 Float32 音频数据
+                const pcmData = new Int16Array(bytes.buffer);
+                console.log(`[Audio Playback] handleIncomingAudio: converted to Int16Array, length=${pcmData.length}`);
+
+                const floatData = new Float32Array(pcmData.length);
+                for (let i = 0; i < pcmData.length; i++) {
+                    floatData[i] = pcmData[i] / 32768.0;  // 16-bit to float (-1 to 1)
+                }
+                console.log(`[Audio Playback] handleIncomingAudio: converted to Float32Array, length=${floatData.length}, decode SUCCESS`);
+
+                // 初始化播放音频上下文（如果还没有）
+                initPlaybackAudioContext();
+
+                // 添加到播放队列
+                console.log(`[Audio Playback] handleIncomingAudio: adding to playback queue for ${senderName}`);
+                queueAudioForPlayback(senderId, senderName, floatData);
+                console.log(`[Audio Playback] handleIncomingAudio: added to queue SUCCESS`);
+
+                // 更新最后接收音频时间
+                voiceChat.lastAudioTime.set(senderId, Date.now());
+
+                // 调试日志（每100帧打印一次）
+                if (!voiceChat.audioFrameCount) voiceChat.audioFrameCount = 0;
+                voiceChat.audioFrameCount++;
+                if (voiceChat.audioFrameCount % 100 === 0) {
+                    console.log(`[Audio Playback] Received frame ${voiceChat.audioFrameCount} from ${senderName}, samples=${floatData.length}`);
+                }
+
+                console.log(`[Audio Playback] handleIncomingAudio: EXIT - processed successfully`);
+            } catch (error) {
+                console.error('[Audio Playback] handleIncomingAudio: FAILED -', error);
+            }
+        }
+
+        /**
+         * 初始化播放用的 AudioContext
+         */
+        function initPlaybackAudioContext() {
+            if (voiceChat.playbackAudioContext) return;
+
+            try {
+                voiceChat.playbackAudioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 16000  // 与采集采样率一致
+                });
+                console.log('[Audio Playback] AudioContext initialized, sampleRate=16000');
+            } catch (error) {
+                console.error('[Audio Playback] Failed to initialize AudioContext:', error);
+            }
+        }
+
+        /**
+         * 将音频数据加入播放队列
+         */
+        function queueAudioForPlayback(userId, userName, floatData) {
+            if (!voiceChat.playbackAudioContext) return;
+
+            // 获取或创建该用户的音频缓冲区
+            if (!voiceChat.audioPlaybackBuffers.has(userId)) {
+                voiceChat.audioPlaybackBuffers.set(userId, []);
+                voiceChat.isPlayingAudio.set(userId, false);
+            }
+
+            const buffers = voiceChat.audioPlaybackBuffers.get(userId);
+            buffers.push(floatData);
+
+            // 限制缓冲区大小，防止内存泄漏
+            if (buffers.length > 50) {
+                buffers.shift();
+            }
+
+            // 如果没有正在播放，开始播放
+            if (!voiceChat.isPlayingAudio.get(userId)) {
+                playNextAudioBuffer(userId, userName);
+            }
+        }
+
+        /**
+         * 播放下一个音频缓冲区
+         */
+        function playNextAudioBuffer(userId, userName) {
+            if (!voiceChat.playbackAudioContext) return;
+
+            const buffers = voiceChat.audioPlaybackBuffers.get(userId);
+            if (!buffers || buffers.length === 0) {
+                voiceChat.isPlayingAudio.set(userId, false);
+                return;
+            }
+
+            voiceChat.isPlayingAudio.set(userId, true);
+
+            // 合并缓冲区中的所有音频数据（减少播放中断）
+            let totalLength = 0;
+            for (const buffer of buffers) {
+                totalLength += buffer.length;
+            }
+
+            const mergedData = new Float32Array(totalLength);
+            let offset = 0;
+            for (const buffer of buffers) {
+                mergedData.set(buffer, offset);
+                offset += buffer.length;
+            }
+            buffers.length = 0;  // 清空已合并的缓冲区
+
+            // 创建 AudioBuffer
+            const audioBuffer = voiceChat.playbackAudioContext.createBuffer(
+                1,  // 单声道
+                mergedData.length,
+                16000  // 采样率
+            );
+            audioBuffer.copyToChannel(mergedData, 0);
+
+            // 创建音频源并播放
+            const source = voiceChat.playbackAudioContext.createBufferSource();
+            source.buffer = audioBuffer;
+
+            // 添加音量控制（避免声音过大）
+            const gainNode = voiceChat.playbackAudioContext.createGain();
+            gainNode.gain.value = 0.8;  // 80% 音量
+
+            source.connect(gainNode);
+            gainNode.connect(voiceChat.playbackAudioContext.destination);
+
+            source.onended = () => {
+                // 检查是否还有更多音频需要播放
+                if (buffers.length > 0) {
+                    // 短暂延迟后播放下一批，允许更多数据到达
+                    setTimeout(() => playNextAudioBuffer(userId, userName), 50);
+                } else {
+                    voiceChat.isPlayingAudio.set(userId, false);
+                }
+            };
+
+            source.start(0);
+
+            // 更新UI显示谁在说话
+            updateVoiceParticipantSpeaking(userId, userName, true);
+
+            // 停止说话状态检测（如果一段时间没收到音频）
+            setTimeout(() => checkSpeakingStatus(userId, userName), 500);
+        }
+
+        /**
+         * 检查用户是否还在说话
+         */
+        function checkSpeakingStatus(userId, userName) {
+            const lastTime = voiceChat.lastAudioTime.get(userId) || 0;
+            const now = Date.now();
+
+            // 如果超过300ms没有收到音频，认为停止说话
+            if (now - lastTime > 300) {
+                updateVoiceParticipantSpeaking(userId, userName, false);
+            }
+        }
+
+        /**
+         * 更新参与者说话状态UI
+         */
+        function updateVoiceParticipantSpeaking(userId, userName, isSpeaking) {
+            const participant = voiceChat.participants.get(userId);
+            if (participant) {
+                participant.isSpeaking = isSpeaking;
+                updateVoiceParticipantsUI();
+            }
+        }
+
+        // ===========================================================================
+        // 邀请二维码和随机用户名功能
+        // ===========================================================================
+
+        // 形容词和名词库，用于生成随机用户名
+        const ADJECTIVES = ['快乐', '聪明', '勇敢', '温柔', '机智', '活泼', '善良', '可爱', '帅气', '美丽', '神秘', '酷炫', '阳光', '幽默', '勤奋'];
+        const NOUNS = ['熊猫', '猫咪', '狗狗', '兔子', '老虎', '狮子', '狐狸', '松鼠', '小鸟', '鱼儿', '星星', '月亮', '太阳', '云朵', '彩虹', '大侠', '侠客', '忍者', '骑士', '法师'];
+
+        let currentQRCode = null;
+        let inviteCode = null;
+
+        // 生成随机用户名
+        function generateRandomName() {
+            const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+            const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+            const randomNum = Math.floor(Math.random() * 1000);
+            const name = `${adj}${ noun}${randomNum}`;
+            document.getElementById('user-name').value = name;
+            log(`已生成随机用户名: ${name}`);
+        }
+
+        // 生成邀请码
+        function generateInviteCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // 生成二维码
+        function generateQRCode() {
+            const sessionId = document.getElementById('session-id').value;
+            if (!sessionId) return;
+
+            inviteCode = generateInviteCode();
+            const baseUrl = window.location.origin + window.location.pathname;
+            let inviteUrl = `${baseUrl}?room=${encodeURIComponent(sessionId)}&invite=${inviteCode}`;
+
+            // 如果勾选了"包含密码"，添加密码参数
+            const includePassword = document.getElementById('include-password').checked;
+            if (includePassword && pendingPasswordQuestion && pendingPasswordAnswer) {
+                inviteUrl += `&pwd=${encodeURIComponent(pendingPasswordAnswer)}`;
+            }
+
+            // 清除旧的二维码
+            const qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+
+            // 生成新的二维码
+            currentQRCode = new QRCode(qrcodeDiv, {
+                text: inviteUrl,
+                width: 100,
+                height: 100,
+                colorDark: '#666',
+                colorLight: '#1a1a1a',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            // 保存邀请链接到 data 属性
+            qrcodeDiv.setAttribute('data-invite-url', inviteUrl);
+            console.log('生成的邀请链接:', inviteUrl);
+        }
+
+        // 复制邀请链接
+        function copyInviteLink() {
+            const sessionId = document.getElementById('session-id').value;
+            if (!sessionId) {
+                alert('请先生成二维码');
+                return;
+            }
+
+            const baseUrl = window.location.origin + window.location.pathname;
+            const code = inviteCode || generateInviteCode();
+            let inviteUrl = `${baseUrl}?room=${encodeURIComponent(sessionId)}&invite=${code}`;
+
+            // 如果勾选了"包含密码"，添加密码参数
+            const includePassword = document.getElementById('include-password').checked;
+            if (includePassword && pendingPasswordQuestion && pendingPasswordAnswer) {
+                inviteUrl += `&pwd=${encodeURIComponent(pendingPasswordAnswer)}`;
+            }
+
+            navigator.clipboard.writeText(inviteUrl).then(() => {
+                alert('邀请链接已复制到剪贴板！');
+                log('邀请链接已复制');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = inviteUrl;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('邀请链接已复制到剪贴板！');
+            });
+        }
+
+        // 下载二维码
+        function downloadQRCode() {
+            const qrcodeDiv = document.getElementById('qrcode');
+            const img = qrcodeDiv.querySelector('img');
+            if (img && img.src) {
+                const link = document.createElement('a');
+                link.download = `chat-invite-${inviteCode || 'code'}.png`;
+                link.href = img.src;
+                link.click();
+                log('二维码已下载');
+            } else {
+                alert('二维码生成中，请稍后重试');
+            }
+        }
+
+        // 解析URL参数并自动填写
+        function parseUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            const inviteParam = urlParams.get('invite');
+            const pwdAnswerParam = urlParams.get('pwd'); // 邀请链接中的密码答案
+
+            if (roomParam) {
+                document.getElementById('session-id').value = roomParam;
+                log(`已从邀请链接加载房间: ${roomParam}`);
+                if (inviteParam) {
+                    log(`邀请码: ${inviteParam}`);
+                }
+                // 如果邀请链接包含密码，保存到 pending 变量
+                if (pwdAnswerParam) {
+                    pendingPasswordAnswer = pwdAnswerParam;
+                    log('邀请链接包含房间密码');
+                }
+            }
+        }
+
+        // 页面加载时解析URL参数
+        parseUrlParams();
+
+        // 监听房间ID变化，生成二维码
+        const sessionIdInput = document.getElementById('session-id');
+        sessionIdInput.addEventListener('change', generateQRCode);
+        sessionIdInput.addEventListener('input', debounce(generateQRCode, 500));
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 页面加载时检查密码输入框
+        console.log('[前端] 页面加载完成，检查密码输入框:');
+        console.log('  password-question:', document.getElementById('password-question'));
+        console.log('  password-answer:', document.getElementById('password-answer'));
+    </script>
+</body>
+</html>

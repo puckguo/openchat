@@ -1,0 +1,73 @@
+{
+  "userId": "test_user",
+  "history": [
+    {
+      "date": "2026-02-12",
+      "topics": [
+        "人工智能",
+        "经济政策",
+        "AI技术发展",
+        "AI与就业"
+      ],
+      "opinions": [
+        {
+          "date": "2026-02-12",
+          "topic": "人工智能",
+          "view": "AI应该在监管下发展，确保安全和可控",
+          "context": "讨论AI技术突破时的观点",
+          "source": "discussion",
+          "id": "op_1770881953265_91j63oj",
+          "timestamp": "2026-02-12T07:39:13.265Z"
+        },
+        {
+          "date": "2026-02-12",
+          "topic": "经济政策",
+          "view": "支持适度的财政刺激政策",
+          "source": "discussion",
+          "id": "op_1770881953266_9lmgdoa",
+          "timestamp": "2026-02-12T07:39:13.266Z"
+        },
+        {
+          "date": "2026-02-12",
+          "topic": "AI技术发展",
+          "view": "用户关注AI技术的发展，并询问今日AI突破的意义。",
+          "context": "用户说：“我对AI技术的发展比较关注，你觉得今天报道的AI突破有什么意义？”",
+          "source": "discussion",
+          "id": "op_1770881976633_2xdo6al",
+          "timestamp": "2026-02-12T07:39:36.633Z"
+        },
+        {
+          "date": "2026-02-12",
+          "topic": "AI与就业",
+          "view": "用户担心AI发展太快会导致失业问题。",
+          "context": "用户说：“我担心AI发展太快会带来失业问题，你怎么看？”",
+          "source": "discussion",
+          "id": "op_1770881976634_c26b67z",
+          "timestamp": "2026-02-12T07:39:36.634Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-02-11",
+      "topics": [
+        "人工智能"
+      ],
+      "opinions": [
+        {
+          "date": "2026-02-11",
+          "topic": "人工智能",
+          "view": "关注AI对就业市场的影响",
+          "source": "discussion",
+          "id": "op_1770881953283_badhp5d",
+          "timestamp": "2026-02-12T07:39:13.283Z"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "coreViews": [],
+    "interests": [],
+    "stanceMap": {}
+  },
+  "updatedAt": "2026-02-12T07:39:36.634Z"
+}

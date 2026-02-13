@@ -1,0 +1,73 @@
+{
+  "userId": "test_user_mmmo",
+  "history": [
+    {
+      "date": "2026-02-11",
+      "topics": [
+        "AI监管",
+        "科技投资"
+      ],
+      "opinions": [
+        {
+          "date": "2026-02-11",
+          "topic": "AI监管",
+          "view": "支持AI发展但需要建立完善的监管框架",
+          "context": "昨日讨论",
+          "source": "discussion",
+          "id": "op_1770895425249_ng4xpf6",
+          "timestamp": "2026-02-12T11:23:45.249Z"
+        },
+        {
+          "date": "2026-02-11",
+          "topic": "科技投资",
+          "view": "看好AI领域的长期投资价值",
+          "source": "discussion",
+          "id": "op_1770895425251_z0otza5",
+          "timestamp": "2026-02-12T11:23:45.251Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-02-12",
+      "topics": [
+        "AI公司估值",
+        "AI投资与普通投资者"
+      ],
+      "opinions": [
+        {
+          "date": "2026-02-12",
+          "topic": "AI公司估值",
+          "view": "担心当前AI公司的高估值可能存在泡沫风险。",
+          "context": "用户针对AI突破和科技投资动态，直接提问：“这些AI公司估值这么高，会不会是泡沫？”",
+          "source": "discussion",
+          "id": "op_1770895445342_uyui0pt",
+          "timestamp": "2026-02-12T11:24:05.342Z"
+        },
+        {
+          "date": "2026-02-12",
+          "topic": "AI公司估值",
+          "view": "担心当前AI公司的高估值可能是泡沫，存在风险。",
+          "context": "用户针对AI公司估值接近或超过传统科技巨头的情况，直接提问“会不会是泡沫？”，表达了对估值过高的担忧。",
+          "source": "discussion",
+          "id": "op_1770895462010_614ram7",
+          "timestamp": "2026-02-12T11:24:22.010Z"
+        },
+        {
+          "date": "2026-02-12",
+          "topic": "AI投资与普通投资者",
+          "view": "关注普通投资者应如何看待和把握AI领域的投资机会。",
+          "context": "用户主动询问“普通投资者应该怎么看待这个机会？”，表明其从普通投资者立场出发，希望理解如何应对AI领域的投资复杂性。",
+          "source": "discussion",
+          "id": "op_1770895462011_kji9szh",
+          "timestamp": "2026-02-12T11:24:22.011Z"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "coreViews": [],
+    "interests": [],
+    "stanceMap": {}
+  },
+  "updatedAt": "2026-02-12T11:24:22.011Z"
+}
