@@ -188,6 +188,177 @@ ALLOW_ANONYMOUS=true
 
 详细部署说明请参阅 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
+## 外部 API 泛用性与替代方案
+
+OpenChat 在设计时充分考虑了 API 的灵活性。所有外部服务都使用标准接口，可以轻松替换或简化。
+
+### AI 服务（DeepSeek）
+
+**当前实现**: 使用 DeepSeek 的 OpenAI 兼容 API（`multiplayer/ai-service.ts`）
+
+**泛用设计**: AI 服务遵循 OpenAI 的标准对话完成格式，兼容任何 OpenAI 兼容的提供商。
+
+**替代方案**:
+```env
+# 方案 1: 直接使用 OpenAI
+OPENAI_API_KEY=your-openai-key
+DEEPSEEK_BASE_URL=https://api.openai.com/v1
+DEEPSEEK_MODEL=gpt-4
+
+# 方案 2: 使用本地 AI（Ollama）
+DEEPSEEK_BASE_URL=http://localhost:11434/v1
+DEEPSEEK_MODEL=llama3
+
+# 方案 3: 使用其他兼容提供商（Anthropic、Cohere 等）
+DEEPSEEK_BASE_URL=https://api.anthropic.com/v1
+DEEPSEEK_MODEL=claude-3-opus
+
+# 方案 4: 简化 - 完全禁用 AI
+ENABLE_AI=false
+```
+
+### ASR/TTS（语音转录）
+
+**当前实现**: 使用 OpenAI Whisper API（`multiplayer/transcription.ts`）
+
+**支持格式**: FLAC、M4A、MP3、MP4、MPEG、MPGA、OGA、OGG、WAV、WEBM
+
+**替代方案**:
+```typescript
+// 方案 1: 使用 Whisper X（免费、开源）
+// 安装: pip install whisperx
+// 将转录服务替换为本地模型
+
+// 方案 2: 使用其他云提供商
+// Google Cloud Speech-to-Text
+// Azure Speech Services
+// Amazon Transcribe
+
+// 方案 3: 简化 - 禁用语音功能
+// 从 voice-chat-service.ts 中移除转录服务调用
+```
+
+### OSS（对象存储服务）
+
+**当前实现**: 阿里云 OSS（`multiplayer/oss.ts`）
+
+**泛用设计**: 存储管理器遵循标准的云存储模式，支持上传、下载、删除和签名 URL 操作。
+
+**替代方案**:
+```env
+# 方案 1: AWS S3（最流行的替代方案）
+# 安装: bun add @aws-sdk/client-s3
+# 用 S3 客户端替换 OSS 管理器
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_REGION=us-east-1
+S3_BUCKET=your-bucket
+
+# 方案 2: Cloudflare R2（免费出口流量）
+# 安装: bun add @cloudflare/workers-types
+CLOUDFLARE_ACCOUNT_ID=your-id
+CLOUDFLARE_R2_ACCESS_KEY=your-key
+CLOUDFLARE_R2_SECRET=your-secret
+R2_BUCKET=your-bucket
+
+# 方案 3: MinIO（自托管 S3 兼容服务）
+# 通过 Docker 部署 MinIO 或使用本地文件系统
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+
+# 方案 4: 简化 - 使用本地文件系统
+# 用 fs 操作替换 OSS 管理器
+# 文件存储在 ./uploads 目录中
+```
+
+### RDS（数据库）
+
+**当前实现**: PostgreSQL，通过 `pg` 库（`multiplayer/database.ts`）
+
+**泛用设计**: 使用标准 SQL 查询，使得数据库无关。
+
+**替代方案**:
+```env
+# 方案 1: SQLite（更简单，无需单独服务器）
+# 安装: bun add better-sqlite3
+DATABASE_URL=sqlite://./data/chat.db
+
+# 方案 2: MySQL/MariaDB
+DATABASE_URL=mysql://user:password@localhost:3306/openchat
+
+# 方案 3: MongoDB（NoSQL 替代方案）
+# 安装: bun add mongodb
+MONGODB_URL=mongodb://localhost:27017/openchat
+
+# 方案 4: 简化 - 内存存储
+# 移除数据库依赖，仅使用会话存储
+# 重启后数据丢失（测试环境可接受）
+```
+
+### 认证（Supabase）
+
+**当前实现**: Supabase Auth（`multiplayer/supabase-auth.ts`）
+
+**泛用设计**: 基于 JWT 的标准认证，支持 OAuth 提供商。
+
+**替代方案**:
+```env
+# 方案 1: Auth0（流行的替代方案）
+AUTH0_DOMAIN=your-domain.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-secret
+
+# 方案 2: Clerk（现代化、开发者友好）
+CLERK_PUBLISHABLE_KEY=your-key
+CLERK_SECRET_KEY=your-secret
+
+# 方案 3: NextAuth.js（如果使用 Next.js 前端）
+# 内置 Next.js 认证
+
+# 方案 4: 简化 - 仅匿名访问
+ALLOW_ANONYMOUS=true
+ENABLE_SUPABASE_AUTH=false
+# 无需认证
+```
+
+### 简化部署场景
+
+**最小化配置（仅需 AI + 数据库）**:
+```env
+# 只需这两个服务即可开始
+DEEPSEEK_API_KEY=your-key
+DATABASE_URL=postgresql://user:pass@localhost:5432/openchat
+ENABLE_AI=true
+ENABLE_DATABASE=true
+```
+
+**本地开发（无外部 API）**:
+```env
+# 使用 Ollama 作为本地 AI
+DEEPSEEK_BASE_URL=http://localhost:11434/v1
+DEEPSEEK_MODEL=llama3
+
+# 使用 SQLite 作为本地数据库
+DATABASE_URL=sqlite://./data/chat.db
+
+# 使用文件系统存储
+ENABLE_OSS=false
+
+# 匿名访问
+ALLOW_ANONYMOUS=true
+```
+
+**企业级部署（全部服务）**:
+```env
+# 使用现有基础设施
+OPENAI_API_KEY=your-openai-key
+AWS_REGION=us-east-1
+S3_BUCKET=company-bucket
+RDS_ENDPOINT=postgres.company.com:5432
+AUTH0_DOMAIN=company.auth0.com
+```
+
 ## 使用示例
 
 ### 创建聊天室

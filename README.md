@@ -172,6 +172,177 @@ ALLOW_ANONYMOUS=true
 
 For detailed deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
+## External API Compatibility & Alternatives
+
+OpenChat is designed with API flexibility in mind. All external services use standard interfaces that can be easily replaced or simplified.
+
+### AI Service (DeepSeek)
+
+**Current Implementation**: Uses DeepSeek's OpenAI-compatible API (`multiplayer/ai-service.ts`)
+
+**Generic Design**: The AI service follows OpenAI's standard chat completion format, making it compatible with any OpenAI-compatible provider.
+
+**Replacement Options**:
+```env
+# Option 1: Use OpenAI directly
+OPENAI_API_KEY=your-openai-key
+DEEPSEEK_BASE_URL=https://api.openai.com/v1
+DEEPSEEK_MODEL=gpt-4
+
+# Option 2: Use local AI with Ollama
+DEEPSEEK_BASE_URL=http://localhost:11434/v1
+DEEPSEEK_MODEL=llama3
+
+# Option 3: Use other compatible providers (Anthropic, Cohere, etc.)
+DEEPSEEK_BASE_URL=https://api.anthropic.com/v1
+DEEPSEEK_MODEL=claude-3-opus
+
+# Option 4: Simplify - Disable AI entirely
+ENABLE_AI=false
+```
+
+### ASR/TTS (Audio Transcription)
+
+**Current Implementation**: Uses OpenAI Whisper API (`multiplayer/transcription.ts`)
+
+**Supported Formats**: FLAC, M4A, MP3, MP4, MPEG, MPGA, OGA, OGG, WAV, WEBM
+
+**Replacement Options**:
+```typescript
+// Option 1: Use Whisper X (free, open-source)
+// Install: pip install whisperx
+// Replace transcription service with local model
+
+// Option 2: Use other cloud providers
+// Google Cloud Speech-to-Text
+// Azure Speech Services
+// Amazon Transcribe
+
+// Option 3: Simplify - Disable voice features
+// Remove transcription service calls from voice-chat-service.ts
+```
+
+### OSS (Object Storage Service)
+
+**Current Implementation**: Alibaba Cloud OSS (`multiplayer/oss.ts`)
+
+**Generic Design**: The storage manager follows a standard cloud storage pattern with upload, download, delete, and signed URL operations.
+
+**Replacement Options**:
+```env
+# Option 1: AWS S3 (most popular alternative)
+# Install: bun add @aws-sdk/client-s3
+# Replace OSS manager with S3 client
+AWS_ACCESS_KEY_ID=your-key
+AWS_SECRET_ACCESS_KEY=your-secret
+AWS_REGION=us-east-1
+S3_BUCKET=your-bucket
+
+# Option 2: Cloudflare R2 (free egress)
+# Install: bun add @cloudflare/workers-types
+CLOUDFLARE_ACCOUNT_ID=your-id
+CLOUDFLARE_R2_ACCESS_KEY=your-key
+CLOUDFLARE_R2_SECRET=your-secret
+R2_BUCKET=your-bucket
+
+# Option 3: MinIO (self-hosted S3-compatible)
+# Deploy MinIO via Docker or use local filesystem
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+
+# Option 4: Simplify - Use local filesystem
+# Replace OSS manager with fs operations
+# Files stored in ./uploads directory
+```
+
+### RDS (Database)
+
+**Current Implementation**: PostgreSQL via `pg` library (`multiplayer/database.ts`)
+
+**Generic Design**: Uses standard SQL queries, making it database-agnostic.
+
+**Replacement Options**:
+```env
+# Option 1: SQLite (simpler, no separate server)
+# Install: bun add better-sqlite3
+DATABASE_URL=sqlite://./data/chat.db
+
+# Option 2: MySQL/MariaDB
+DATABASE_URL=mysql://user:password@localhost:3306/openchat
+
+# Option 3: MongoDB (NoSQL alternative)
+# Install: bun add mongodb
+MONGODB_URL=mongodb://localhost:27017/openchat
+
+# Option 4: Simplify - In-memory storage
+# Remove database dependency, use only session storage
+# Data lost on restart (acceptable for testing)
+```
+
+### Authentication (Supabase)
+
+**Current Implementation**: Supabase Auth (`multiplayer/supabase-auth.ts`)
+
+**Generic Design**: Standard JWT-based authentication with OAuth providers.
+
+**Replacement Options**:
+```env
+# Option 1: Auth0 (popular alternative)
+AUTH0_DOMAIN=your-domain.auth0.com
+AUTH0_CLIENT_ID=your-client-id
+AUTH0_CLIENT_SECRET=your-secret
+
+# Option 2: Clerk (modern, developer-friendly)
+CLERK_PUBLISHABLE_KEY=your-key
+CLERK_SECRET_KEY=your-secret
+
+# Option 3: NextAuth.js (if using Next.js frontend)
+# Built-in Next.js authentication
+
+# Option 4: Simplify - Anonymous-only access
+ALLOW_ANONYMOUS=true
+ENABLE_SUPABASE_AUTH=false
+# No authentication required
+```
+
+### Simplified Deployment Scenarios
+
+**Minimum Setup (AI + Database only)**:
+```env
+# Just these two services to get started
+DEEPSEEK_API_KEY=your-key
+DATABASE_URL=postgresql://user:pass@localhost:5432/openchat
+ENABLE_AI=true
+ENABLE_DATABASE=true
+```
+
+**Local Development (no external APIs)**:
+```env
+# Use Ollama for local AI
+DEEPSEEK_BASE_URL=http://localhost:11434/v1
+DEEPSEEK_MODEL=llama3
+
+# Use SQLite for local database
+DATABASE_URL=sqlite://./data/chat.db
+
+# Use filesystem for storage
+ENABLE_OSS=false
+
+# Anonymous access
+ALLOW_ANONYMOUS=true
+```
+
+**Enterprise Setup (all services)**:
+```env
+# Use your existing infrastructure
+OPENAI_API_KEY=your-openai-key
+AWS_REGION=us-east-1
+S3_BUCKET=company-bucket
+RDS_ENDPOINT=postgres.company.com:5432
+AUTH0_DOMAIN=company.auth0.com
+```
+
 ## Usage Examples
 
 ### Creating a Chat Room
