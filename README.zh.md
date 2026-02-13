@@ -217,25 +217,34 @@ DEEPSEEK_MODEL=claude-3-opus
 ENABLE_AI=false
 ```
 
-### ASR/TTS（语音转录）
+### ASR（语音识别）
 
-**当前实现**: 使用 OpenAI Whisper API（`multiplayer/transcription.ts`）
+**当前实现**: 使用阿里云 DashScope 的 Paraformer 实时语音识别（`multiplayer/voice-chat-service.ts`）
+- 模型：`paraformer-realtime-v1`
+- 基于 WebSocket 的流式识别
+- 16kHz PCM 音频格式
+- 低延迟的实时转录
 
-**支持格式**: FLAC、M4A、MP3、MP4、MPEG、MPGA、OGA、OGG、WAV、WEBM
+**支持格式**: PCM（16-bit，16kHz）- 其他格式需客户端重采样
 
 **替代方案**:
-```typescript
-// 方案 1: 使用 Whisper X（免费、开源）
-// 安装: pip install whisperx
-// 将转录服务替换为本地模型
+```env
+# 方案 1: OpenAI Whisper（基于文件，非实时）
+OPENAI_API_KEY=your-openai-key
+# 注意：需要修改 voice-chat-service.ts 使用 HTTP API 而非 WebSocket
 
-// 方案 2: 使用其他云提供商
-// Google Cloud Speech-to-Text
-// Azure Speech Services
-// Amazon Transcribe
+# 方案 2: Google Cloud Speech-to-Text
+GOOGLE_CLOUD_CREDENTIALS=path/to/credentials.json
+# WebSocket 流式：wss://speech.googleapis.com/v1/speech:recognize
 
-// 方案 3: 简化 - 禁用语音功能
-// 从 voice-chat-service.ts 中移除转录服务调用
+# 方案 3: Azure Speech Services
+AZURE_SPEECH_KEY=your-key
+AZURE_SPEECH_REGION=eastus
+# WebSocket 流式：wss://{region}.stt.speech.microsoft.com/speech/recognition
+
+# 方案 4: 简化 - 禁用语音功能
+ENABLE_VOICE_CHAT=false
+# 或直接留空：DASHSCOPE_API_KEY=
 ```
 
 ### OSS（对象存储服务）

@@ -201,25 +201,34 @@ DEEPSEEK_MODEL=claude-3-opus
 ENABLE_AI=false
 ```
 
-### ASR/TTS (Audio Transcription)
+### ASR (Audio Speech Recognition)
 
-**Current Implementation**: Uses OpenAI Whisper API (`multiplayer/transcription.ts`)
+**Current Implementation**: Uses Alibaba Cloud DashScope's Paraformer Real-time ASR (`multiplayer/voice-chat-service.ts`)
+- Model: `paraformer-realtime-v1`
+- WebSocket-based streaming recognition
+- 16kHz PCM audio format
+- Low latency with real-time transcription
 
-**Supported Formats**: FLAC, M4A, MP3, MP4, MPEG, MPGA, OGA, OGG, WAV, WEBM
+**Supported Formats**: PCM (16-bit, 16kHz) - Client-side resampling required for other formats
 
 **Replacement Options**:
-```typescript
-// Option 1: Use Whisper X (free, open-source)
-// Install: pip install whisperx
-// Replace transcription service with local model
+```env
+# Option 1: OpenAI Whisper (file-based, not real-time)
+OPENAI_API_KEY=your-openai-key
+# Note: Requires modifying voice-chat-service.ts to use HTTP API instead of WebSocket
 
-// Option 2: Use other cloud providers
-// Google Cloud Speech-to-Text
-// Azure Speech Services
-// Amazon Transcribe
+# Option 2: Google Cloud Speech-to-Text
+GOOGLE_CLOUD_CREDENTIALS=path/to/credentials.json
+# WebSocket streaming: wss://speech.googleapis.com/v1/speech:recognize
 
-// Option 3: Simplify - Disable voice features
-// Remove transcription service calls from voice-chat-service.ts
+# Option 3: Azure Speech Services
+AZURE_SPEECH_KEY=your-key
+AZURE_SPEECH_REGION=eastus
+# WebSocket streaming: wss://{region}.stt.speech.microsoft.com/speech/recognition
+
+# Option 4: Simplify - Disable voice features
+ENABLE_VOICE_CHAT=false
+# Or set: DASHSCOPE_API_KEY=
 ```
 
 ### OSS (Object Storage Service)
