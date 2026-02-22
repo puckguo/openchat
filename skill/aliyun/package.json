@@ -1,0 +1,30 @@
+{
+  "name": "aliyun-integration",
+  "version": "1.0.0",
+  "description": "Alibaba Cloud RDS and OSS integration module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "ali-oss": "^6.23.0",
+    "pg": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "aliyun",
+    "alibaba cloud",
+    "oss",
+    "rds",
+    "postgresql",
+    "storage",
+    "database"
+  ],
+  "license": "MIT"
+}

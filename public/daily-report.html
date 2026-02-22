@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日资讯日报 - AI日报系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #0f3460;
+        }
+        .sidebar-header h1 {
+            font-size: 18px;
+            color: #00d9ff;
+            margin-bottom: 5px;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            color: #888;
+        }
+        /* 日历 */
+        .calendar-section {
+            padding: 15px;
+            border-bottom: 1px solid #0f3460;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .calendar-header button {
+            background: none;
+            border: none;
+            color: #00d9ff;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px 10px;
+        }
+        .calendar-header span {
+            font-weight: bold;
+            color: #eee;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+        .calendar-grid .day-label {
+            font-size: 11px;
+            color: #888;
+            padding: 5px;
+        }
+        .calendar-grid .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .calendar-grid .day:hover {
+            background: #0f3460;
+        }
+        .calendar-grid .day.has-report {
+            background: #00d9ff22;
+            color: #00d9ff;
+            font-weight: bold;
+        }
+        .calendar-grid .day.has-report:hover {
+            background: #00d9ff44;
+        }
+        .calendar-grid .day.selected {
+            background: #00d9ff;
+            color: #000;
+        }
+        .calendar-grid .day.other-month {
+            color: #555;
+        }
+        .calendar-grid .day.today {
+            border: 1px solid #e94560;
+        }
+        /* 报告列表 */
+        .report-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .report-item {
+            padding: 12px;
+            background: #0a0a0a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .report-item:hover {
+            border-color: #00d9ff;
+        }
+        .report-item.active {
+            background: #0f3460;
+            border-color: #00d9ff;
+        }
+        .report-item .date {
+            font-weight: bold;
+            color: #00d9ff;
+            font-size: 14px;
+        }
+        .report-item .info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        /* 主内容区 */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .main-header {
+            padding: 15px 20px;
+            background: #16213e;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .main-header h2 {
+            font-size: 18px;
+            color: #e94560;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #00d9ff;
+            color: #000;
+        }
+        .btn-primary:hover {
+            background: #00a8cc;
+        }
+        .btn-secondary {
+            background: #533483;
+            color: #fff;
+        }
+        .btn-secondary:hover {
+            background: #7b2cbf;
+        }
+        /* 日报内容 */
+        .report-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: #0a0a0a;
+        }
+        .report-content h1 {
+            color: #00d9ff;
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0f3460;
+        }
+        .report-content h2 {
+            color: #e94560;
+            font-size: 18px;
+            margin: 25px 0 15px;
+        }
+        .report-content h3 {
+            color: #00d9ff;
+            font-size: 16px;
+            margin: 20px 0 10px;
+        }
+        .report-content p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+            color: #ccc;
+        }
+        .report-content blockquote {
+            border-left: 3px solid #00d9ff;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #aaa;
+            font-style: italic;
+        }
+        .report-content a {
+            color: #00d9ff;
+            text-decoration: none;
+        }
+        .report-content a:hover {
+            text-decoration: underline;
+        }
+        .report-content ul, .report-content ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        .report-content li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .report-content hr {
+            border: none;
+            border-top: 1px solid #0f3460;
+            margin: 20px 0;
+        }
+        .report-content > blockquote:first-of-type {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 3px solid #00d9ff;
+            font-size: 13px;
+        }
+        /* 讨论区域 */
+        .discussion-section {
+            height: 350px;
+            background: #16213e;
+            border-top: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+        .discussion-header {
+            padding: 12px 20px;
+            background: #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .discussion-header h3 {
+            font-size: 14px;
+            color: #00d9ff;
+        }
+        .opinion-toggle {
+            font-size: 12px;
+            color: #888;
+            cursor: pointer;
+        }
+        .opinion-toggle:hover {
+            color: #00d9ff;
+        }
+        .discussion-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .message.assistant .message-avatar {
+            background: #00d9ff33;
+        }
+        .message.user .message-avatar {
+            background: #e9456033;
+        }
+        .message-content {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .message.assistant .message-content {
+            background: #0f3460;
+            border-bottom-left-radius: 4px;
+        }
+        .message.user .message-content {
+            background: #533483;
+            border-bottom-right-radius: 4px;
+        }
+        .message-time {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .discussion-input {
+            padding: 15px;
+            background: #0a0a0a;
+            display: flex;
+            gap: 10px;
+        }
+        .discussion-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #0f3460;
+            border-radius: 8px;
+            background: #16213e;
+            color: #fff;
+            font-size: 14px;
+        }
+        .discussion-input input:focus {
+            outline: none;
+            border-color: #00d9ff;
+        }
+        /* 观点面板 */
+        .opinion-panel {
+            position: fixed;
+            right: -350px;
+            top: 0;
+            width: 350px;
+            height: 100vh;
+            background: #16213e;
+            border-left: 1px solid #0f3460;
+            transition: right 0.3s;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+        .opinion-panel.open {
+            right: 0;
+        }
+        .opinion-panel-header {
+            padding: 20px;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .opinion-panel-header h3 {
+            color: #e94560;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .close-btn:hover {
+            color: #e94560;
+        }
+        .opinion-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .opinion-section {
+            margin-bottom: 20px;
+        }
+        .opinion-section h4 {
+            font-size: 13px;
+            color: #00d9ff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .opinion-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            background: #0f3460;
+            border-radius: 20px;
+            font-size: 12px;
+            margin: 3px;
+            color: #ccc;
+        }
+        .opinion-item {
+            padding: 12px;
+            background: #0a0a0a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .opinion-item .topic {
+            font-size: 12px;
+            color: #00d9ff;
+            margin-bottom: 5px;
+        }
+        .opinion-item .view {
+            font-size: 13px;
+            color: #ccc;
+        }
+        .opinion-item .date {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+        /* 遮罩 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 99;
+        }
+        .overlay.show {
+            display: block;
+        }
+        /* 加载状态 */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #888;
+        }
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #0f3460;
+            border-top-color: #00d9ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #888;
+        }
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                height: 100vh;
+                z-index: 101;
+                transition: left 0.3s;
+            }
+            .sidebar.open {
+                left: 0;
+            }
+            .opinion-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>📰 每日资讯日报</h1>
+                <p>AI驱动的新闻总结与观点讨论</p>
+            </div>
+
+            <!-- 日历 -->
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <button onclick="changeMonth(-1)">◀</button>
+                    <span id="currentMonth">2026年2月</span>
+                    <button onclick="changeMonth(1)">▶</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- 日历由JS生成 -->
+                </div>
+            </div>
+
+            <!-- 报告列表 -->
+            <div class="report-list" id="reportList">
+                <!-- 报告列表由JS生成 -->
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main">
+            <div class="main-header">
+                <h2 id="reportTitle">选择日期查看日报</h2>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="downloadReport()" id="downloadBtn" style="display:none">
+                        ⬇️ 下载
+                    </button>
+                    <button class="btn btn-primary" onclick="startDiscussion()" id="discussBtn" style="display:none">
+                        💬 开始讨论
+                    </button>
+                </div>
+            </div>
+
+            <div class="report-content" id="reportContent">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📰</div>
+                    <p>请从左侧选择日期查看日报</p>
+                </div>
+            </div>
+
+            <!-- 讨论区域 -->
+            <div class="discussion-section" id="discussionSection" style="display:none">
+                <div class="discussion-header">
+                    <h3>💬 与AI讨论今日日报</h3>
+                    <span class="opinion-toggle" onclick="toggleOpinionPanel()">
+                        📊 我的观点
+                    </span>
+                </div>
+                <div class="discussion-messages" id="discussionMessages">
+                    <!-- 消息由JS生成 -->
+                </div>
+                <div class="discussion-input">
+                    <input type="text" id="messageInput" placeholder="输入你的观点..."
+                           onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 观点面板 -->
+    <div class="overlay" id="overlay" onclick="toggleOpinionPanel()"></div>
+    <div class="opinion-panel" id="opinionPanel">
+        <div class="opinion-panel-header">
+            <h3>📊 我的观点档案</h3>
+            <button class="close-btn" onclick="toggleOpinionPanel()">×</button>
+        </div>
+        <div class="opinion-content" id="opinionContent">
+            <!-- 观点内容由JS生成 -->
+        </div>
+    </div>
+
+    <script>
+        // API 配置 - 自动检测当前服务器地址
+        const API_BASE_URL = window.location.protocol === 'https:'
+            ? `https://${window.location.hostname}:3002`
+            : `http://${window.location.hostname}:3002`;
+
+        // 全局状态
+        let currentDate = new Date();
+        let selectedDate = null;
+        let reports = [];
+        let sessionId = null;
+        let userId = 'user_' + Math.random().toString(36).substring(2, 9);
+        let messages = [];
+        let opinions = null;
+
+        // 初始化
+        async function init() {
+            renderCalendar();
+            await loadReports();
+            await loadOpinions();
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('currentMonth').textContent =
+                `${year}年${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+
+            // 星期标题
+            const dayLabels = ['日', '一', '二', '三', '四', '五', '六'];
+            dayLabels.forEach(day => {
+                const label = document.createElement('div');
+                label.className = 'day-label';
+                label.textContent = day;
+                grid.appendChild(label);
+            });
+
+            // 上月日期
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = document.createElement('div');
+                day.className = 'day other-month';
+                day.textContent = daysInPrevMonth - i;
+                grid.appendChild(day);
+            }
+
+            // 当月日期
+            const today = new Date().toISOString().split('T')[0];
+            for (let i = 1; i <= daysInMonth; i++) {
+                const day = document.createElement('div');
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+
+                day.className = 'day';
+                day.textContent = i;
+                day.dataset.date = dateStr;
+
+                if (dateStr === today) {
+                    day.classList.add('today');
+                }
+                if (reports.some(r => r.date === dateStr)) {
+                    day.classList.add('has-report');
+                }
+                if (selectedDate === dateStr) {
+                    day.classList.add('selected');
+                }
+
+                day.onclick = () => selectDate(dateStr);
+                grid.appendChild(day);
+            }
+        }
+
+        // 切换月份
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        // 选择日期
+        async function selectDate(date) {
+            selectedDate = date;
+            renderCalendar();
+
+            // 更新报告列表选中状态
+            document.querySelectorAll('.report-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.date === date);
+            });
+
+            await loadReport(date);
+        }
+
+        // 加载报告列表
+        async function loadReports() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/daily-report/reports`);
+                const data = await response.json();
+                reports = data.reports || [];
+
+                const list = document.getElementById('reportList');
+                list.innerHTML = '';
+
+                reports.forEach(report => {
+                    const item = document.createElement('div');
+                    item.className = 'report-item';
+                    item.dataset.date = report.date;
+                    if (report.date === selectedDate) {
+                        item.classList.add('active');
+                    }
+
+                    const date = new Date(report.date);
+                    item.innerHTML = `
+                        <div class="date">${report.date}</div>
+                        <div class="info">${(report.size / 1024).toFixed(1)} KB ·
+                            ${new Date(report.createdAt).toLocaleTimeString()}</div>
+                    `;
+                    item.onclick = () => selectDate(report.date);
+                    list.appendChild(item);
+                });
+
+                renderCalendar();
+            } catch (error) {
+                console.error('Failed to load reports:', error);
+            }
+        }
+
+        // 加载指定日期报告
+        async function loadReport(date) {
+            const content = document.getElementById('reportContent');
+            content.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/daily-report/reports/${date}`);
+                if (!response.ok) {
+                    throw new Error('Report not found');
+                }
+
+                const report = await response.json();
+
+                document.getElementById('reportTitle').textContent =
+                    `${report.date} 每日资讯日报`;
+
+                // 渲染Markdown内容
+                content.innerHTML = renderMarkdown(report);
+
+                // 显示操作按钮
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+                document.getElementById('discussBtn').style.display = 'inline-block';
+
+                // 显示讨论区
+                document.getElementById('discussionSection').style.display = 'flex';
+
+                // 开始新讨论会话
+                await startDiscussion();
+
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>该日期暂无日报</p>
+                    </div>
+                `;
+                document.getElementById('downloadBtn').style.display = 'none';
+                document.getElementById('discussBtn').style.display = 'none';
+                document.getElementById('discussionSection').style.display = 'none';
+            }
+        }
+
+        // 简单的Markdown渲染
+        function renderMarkdown(report) {
+            // 生成Markdown文本
+            let md = `# 每日资讯日报 - ${report.date}\n\n`;
+            md += `> 生成时间: ${new Date(report.generatedAt).toLocaleString('zh-CN')}\n`;
+            md += `> 数据来源: ${report.metadata.totalSources} 个媒体源\n`;
+            md += `> 新闻总数: ${report.metadata.totalNews} 条 (已验证: ${report.metadata.verifiedNews} 条)\n\n`;
+            md += `---\n\n`;
+            md += `## 📋 今日概览\n\n${report.summary}\n\n`;
+            md += `---\n\n`;
+
+            report.sections.forEach(section => {
+                md += `## ${section.categoryName}\n\n`;
+                section.news.forEach((news, i) => {
+                    md += `${i + 1}. **[${news.title}](${news.url})** - ${news.source}\n`;
+                    if (news.summary) {
+                        md += `   > ${news.summary}\n`;
+                    }
+                    md += `\n`;
+                });
+            });
+
+            md += `---\n\n*本日报由 AI 自动生成，仅供参考*`;
+
+            // 转换为HTML
+            let html = md
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank">$1</a>')
+                .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+                .replace(/^---$/gim, '<hr>')
+                .replace(/\n/gim, '<br>');
+
+            return html;
+        }
+
+        // 下载报告
+        async function downloadReport() {
+            if (!selectedDate) return;
+
+            const link = document.createElement('a');
+            link.href = `/api/daily-report/reports/${selectedDate}/download`;
+            link.download = `${selectedDate}-日报.md`;
+            link.click();
+        }
+
+        // 开始讨论
+        async function startDiscussion() {
+            if (!selectedDate) return;
+
+            messages = [];
+            sessionId = null;
+
+            // 清空消息区域并显示加载状态
+            document.getElementById('discussionMessages').innerHTML = '';
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant loading-message';
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">正在准备话题...</div>
+            `;
+            document.getElementById('discussionMessages').appendChild(loadingDiv);
+
+            try {
+                // 调用API获取AI生成的开场白
+                const response = await fetch(`${API_BASE_URL}/api/daily-report/discuss/init`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        date: selectedDate,
+                        userId: userId
+                    })
+                });
+
+                // 移除加载状态
+                loadingDiv.remove();
+
+                if (!response.ok) {
+                    throw new Error('Failed to initialize discussion');
+                }
+
+                const data = await response.json();
+
+                if (data.message) {
+                    sessionId = data.sessionId;
+                    addMessage(data.message);
+                }
+            } catch (error) {
+                // 移除加载状态
+                loadingDiv.remove();
+
+                console.error('Failed to start discussion:', error);
+                // 使用默认开场白作为后备
+                addMessage({
+                    role: 'assistant',
+                    content: `你好！我是你的日报助手。今天想聊聊${selectedDate}的哪些新闻话题？`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !selectedDate) return;
+
+            input.value = '';
+
+            // 添加用户消息
+            addMessage({
+                role: 'user',
+                content: text,
+                timestamp: new Date().toISOString()
+            });
+
+            // 显示加载状态
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant loading-message';
+            loadingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">思考中...</div>
+            `;
+            document.getElementById('discussionMessages').appendChild(loadingDiv);
+            scrollToBottom();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/daily-report/discuss`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        date: selectedDate,
+                        sessionId: sessionId,
+                        userId: userId
+                    })
+                });
+
+                const data = await response.json();
+
+                // 移除加载状态
+                loadingDiv.remove();
+
+                if (data.message) {
+                    sessionId = data.sessionId;
+                    addMessage(data.message);
+
+                    // 刷新观点
+                    await loadOpinions();
+                }
+
+            } catch (error) {
+                loadingDiv.remove();
+                console.error('Failed to send message:', error);
+            }
+        }
+
+        // 添加消息到界面
+        function addMessage(message) {
+            messages.push(message);
+
+            const container = document.getElementById('discussionMessages');
+            const div = document.createElement('div');
+            div.className = `message ${message.role}`;
+            div.innerHTML = `
+                <div class="message-avatar">${message.role === 'user' ? '👤' : '🤖'}</div>
+                <div>
+                    <div class="message-content">${escapeHtml(message.content)}</div>
+                    <div class="message-time">${new Date(message.timestamp).toLocaleTimeString()}</div>
+                </div>
+            `;
+            container.appendChild(div);
+            scrollToBottom();
+        }
+
+        // 滚动到底部
+        function scrollToBottom() {
+            const container = document.getElementById('discussionMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 切换观点面板
+        function toggleOpinionPanel() {
+            document.getElementById('opinionPanel').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('show');
+        }
+
+        // 加载观点
+        async function loadOpinions() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/daily-report/opinions?userId=${userId}`);
+                const data = await response.json();
+                opinions = data.opinions;
+
+                renderOpinions();
+            } catch (error) {
+                console.error('Failed to load opinions:', error);
+            }
+        }
+
+        // 渲染观点
+        function renderOpinions() {
+            const container = document.getElementById('opinionContent');
+            if (!opinions || !opinions.history || opinions.history.length === 0) {
+                container.innerHTML = '<p style="color:#888;text-align:center">暂无观点记录</p>';
+                return;
+            }
+
+            let html = '';
+
+            // 关注领域
+            if (opinions.summary && opinions.summary.interests && opinions.summary.interests.length > 0) {
+                html += '<div class="opinion-section">';
+                html += '<h4>关注领域</h4>';
+                opinions.summary.interests.forEach(interest => {
+                    html += `<span class="opinion-tag">${escapeHtml(interest)}</span>`;
+                });
+                html += '</div>';
+            }
+
+            // 核心观点
+            if (opinions.summary && opinions.summary.coreViews && opinions.summary.coreViews.length > 0) {
+                html += '<div class="opinion-section">';
+                html += '<h4>核心立场</h4>';
+                opinions.summary.coreViews.forEach(view => {
+                    html += `<span class="opinion-tag">${escapeHtml(view)}</span>`;
+                });
+                html += '</div>';
+            }
+
+            // 近期观点
+            html += '<div class="opinion-section">';
+            html += '<h4>近期观点</h4>';
+
+            const recentHistory = opinions.history.slice(-10).reverse();
+            recentHistory.forEach(day => {
+                day.opinions.forEach(opinion => {
+                    html += `
+                        <div class="opinion-item">
+                            <div class="topic">${escapeHtml(opinion.topic)}</div>
+                            <div class="view">${escapeHtml(opinion.view)}</div>
+                            <div class="date">${opinion.date}</div>
+                        </div>
+                    `;
+                });
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // 转义HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>

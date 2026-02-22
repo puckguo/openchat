@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: opencode-chat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-opencode}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opencode_password}
+      POSTGRES_DB: ${POSTGRES_DB:-opencode_chat}
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-opencode}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opencode-network
+
+  # Open CoChat Application
+  opencode-chat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: opencode-chat-app
+    restart: unless-stopped
+    ports:
+      - "${WS_PORT:-3002}:3002"
+    environment:
+      # Server Configuration
+      NODE_ENV: production
+      WS_PORT: 3002
+      WS_HOST: 0.0.0.0
+
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-opencode}:${POSTGRES_PASSWORD:-opencode_password}@postgres:5432/${POSTGRES_DB:-opencode_chat}
+      ENABLE_DATABASE: "true"
+
+      # AI Service
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com/v1}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      DEEPSEEK_MAX_TOKENS: ${DEEPSEEK_MAX_TOKENS:-2000}
+      ENABLE_AI: ${ENABLE_AI:-true}
+
+      # File Storage (OSS)
+      VITE_OSS_ACCESS_KEY_ID: ${VITE_OSS_ACCESS_KEY_ID}
+      VITE_OSS_ACCESS_KEY_SECRET: ${VITE_OSS_ACCESS_KEY_SECRET}
+      VITE_OSS_BUCKET: ${VITE_OSS_BUCKET}
+      VITE_OSS_REGION: ${VITE_OSS_REGION:-oss-cn-beijing}
+      ENABLE_OSS: ${ENABLE_OSS:-false}
+
+      # Authentication
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      ENABLE_SUPABASE_AUTH: ${ENABLE_SUPABASE_AUTH:-false}
+      ALLOW_ANONYMOUS: ${ALLOW_ANONYMOUS:-true}
+
+      # Storage
+      STORAGE_PATH: /app/data
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-10485760}
+
+      # Rate Limiting
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60000}
+    volumes:
+      - app_data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - opencode-network
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: opencode-chat-nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - opencode-chat
+    networks:
+      - opencode-network
+    profiles:
+      - with-nginx
+
+  # Redis (Optional - for caching and sessions)
+  redis:
+    image: redis:7-alpine
+    container_name: opencode-chat-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opencode-network
+    profiles:
+      - with-redis
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+  app_data:
+    driver: local
+  nginx_cache:
+    driver: local
+  redis_data:
+    driver: local
+
+# Network for container communication
+networks:
+  opencode-network:
+    driver: bridge

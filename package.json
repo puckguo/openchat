@@ -1,0 +1,26 @@
+{
+  "name": "open-cochat-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Open CoChat Multiplayer WebSocket Server with AI Daily Report",
+  "scripts": {
+    "start": "bun run multiplayer/websocket-server.ts",
+    "dev": "bun run --watch multiplayer/websocket-server.ts",
+    "test:daily-report": "bun run test-daily-report.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.95.3",
+    "@types/ws": "^8.18.1",
+    "ali-oss": "^6.23.0",
+    "dashscope": "^1.0.1",
+    "openai": "^6.21.0",
+    "pg": "^8.18.0",
+    "ws": "^8.19.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.0.0"
+  }
+}

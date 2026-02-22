@@ -1,0 +1,60 @@
+# Dependencies
+node_modules
+npm-debug.log
+bun.lockb
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Data
+data
+*.sql
+*.sqlite
+
+# Documentation (except LICENSE)
+README.md
+*.md
+!LICENSE
+
+# Testing
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+.editorconfig
+.prettierrc
+.eslintrc
