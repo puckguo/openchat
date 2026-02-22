@@ -6,10 +6,15 @@
 
 <p align="center">
   <strong>🎙️ Real-time multiplayer voice chat + AI assistant</strong><br>
-  Supporting voice/text dual-mode interaction, AI can generate and edit files
+  Supporting voice/text dual-mode interaction, AI can generate and edit files<br><br>
+  English | <a href="README.zh.md">简体中文</a>
 </p>
 
 ---
+
+## 📋 About
+
+**Open CoChat** is an open-source multiplayer real-time voice chat platform with integrated AI assistant, supporting voice/text dual-mode interaction where AI can intervene in group chats in real-time, generate and edit files.
 
 ## ✨ Core Highlights
 
