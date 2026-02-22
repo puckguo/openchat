@@ -1,295 +1,282 @@
-<p align="center">
-  <a href="https://github.com/puckguo/opencochat">
-    <img src="https://img.shields.io/badge/Open-CoChat-blue?style=for-the-badge" alt="Open CoChat logo" width="200">
-  </a>
-</p>
+# Open CoChat - Multiplayer Voice AI Chat Room
 
-<h1 align="center">Open CoChat</h1>
-<p align="center">
-  <strong>AI-Powered Multiplayer Voice Chat Platform</strong>
-</p>
-
-<p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">简体中文</a>
-</p>
+> 🎙️ Real-time multiplayer voice chat + AI assistant, supporting voice/text dual-mode interaction, AI can generate and edit files
 
 ---
 
-## Overview
+## ✨ Core Highlights
 
-**Open CoChat** is an open-source multiplayer real-time voice chat platform with powerful AI assistant capabilities. Built with TypeScript, Bun, and WebSocket, it supports:
+### 🎙️ Multiplayer Real-time Voice Chat
+- Support multiple users online voice chat simultaneously
+- Low-latency WebSocket real-time transmission
+- Clear and stable voice quality
 
-- Multiplayer real-time voice conversations
-- AI real-time voice interaction (end-to-end voice dialogue)
-- Real-time speech recognition (ASR)
-- AI file access and command execution
-- Real-time team collaboration
+### 🤖 AI Real-time Group Chat Intervention
+AI assistants can **listen in real-time** to group voice conversations and participate through two modes:
 
-Perfect for:
-- Development teams needing AI-assisted collaboration
-- Online education classrooms
-- Open-source community discussions
-- Enterprise meetings
+| Mode | Description |
+|------|-------------|
+| **🗣️ Voice Response** | Using Volcano Engine end-to-end voice model, AI replies directly with voice |
+| **💬 Text Response** | Using DeepSeek AI, AI participates in discussions via text |
 
-## Core Features
+### 📁 AI File Operations
+AI can during chat:
+- **Generate files** (code, documents, reports, etc.)
+- **Edit existing files**
+- **Provide file download links**
+- Automatically upload to Alibaba Cloud OSS and generate downloadable links
 
-### Real-time Voice Collaboration
+---
 
-- WebSocket-based real-time voice transmission
-- Multi-user voice chat rooms
-- Low-latency voice communication
-- Voice message recording and playback
-- @mention users and AI assistants
+## 🏗️ Architecture
 
-### AI Voice Assistant
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Client                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  Voice Input │  │  Text Input  │  │ File Download│      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                    WebSocket
+                         │
+┌────────────────────────▼────────────────────────────────────┐
+│                      Open CoChat Server                      │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │           Alibaba Cloud ASR Speech Recognition       │   │
+│  │         Real-time Voice → Text Transcription       │   │
+│  └──────────────────────┬──────────────────────────────┘   │
+│                         │                                  │
+│  ┌──────────────────────▼──────────────────────────────┐   │
+│  │              AI Intent Recognition & Processing     │   │
+│  │    Decision: Voice Reply / Text Reply / File Op    │   │
+│  └──────────────────────┬──────────────────────────────┘   │
+│                         │                                  │
+│         ┌───────────────┼───────────────┐                  │
+│         ▼               ▼               ▼                  │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │ Volcano     │ │ DeepSeek    │ │ File Gen    │          │
+│  │ Voice Model │ │ Text AI     │ │ & Edit      │          │
+│  │ (Voice)     │ │ (Text)      │ │ (OSS Upload)│          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- **DeepSeek AI** integration for intelligent responses
-- **Volcano Engine Doubao Real-time Voice Model** support for end-to-end voice dialogue
-- **Alibaba Cloud ASR** integration for real-time speech recognition
-- **File System Access**: AI can read and analyze project files
-- **Command Execution**: AI can run terminal commands and display results
+---
 
-### Voice Technology Integration
+## 🚀 Quick Start
 
-| Feature | Description | Integration Guide |
-|---------|-------------|-------------------|
-| Alibaba Cloud ASR | Real-time speech recognition | [skill/aliyun/README.md](skill/aliyun/README.md) |
-| Volcano Engine Voice | End-to-end voice dialogue | [skill/volcano-voice-ai-integration.md](skill/volcano-voice-ai-integration.md) |
-| DeepSeek AI | Text-based AI conversation | Built-in support |
-
-### Security & Permissions
-
-- 5-tier role system (Owner, Admin, Member, Guest, AI)
-- 30+ granular permissions
-- Optional password-protected rooms
-- Rate limiting and abuse protection
-
-## Quick Start
-
-### Requirements
-
-- CPU: 2 cores
-- RAM: 4GB
-- Disk: 10GB
-- OS: Linux/macOS/Windows
-- Node.js 18+ or Bun 1.1+
-
-### Installation
+### Docker One-Click Deployment
 
 ```bash
-# Clone the repository
+# 1. Clone repository
 git clone https://github.com/puckguo/opencochat.git
 cd opencochat
 
-# Install dependencies (using Bun)
-bun install
-
-# Or using npm
-npm install
-
-# Copy environment template
+# 2. Configure environment variables
 cp .env.example .env
+# Edit .env, fill in API keys
 
-# Edit .env file with your configurations
-nano .env
+# 3. Start
+docker-compose up -d
+
+# 4. Visit http://localhost:8080
 ```
 
-### Required Environment Variables
+### Local Development
+
+```bash
+# Install dependencies
+bun install
+
+# Configure environment variables
+cp .env.example .env
+
+# Start development server
+bun run dev
+```
+
+---
+
+## 🔧 Environment Variables
+
+### Required Configuration
 
 ```env
-# WebSocket Server Configuration
+# Basic Services
 WS_PORT=3002
-WS_HOST=0.0.0.0
 HTTP_PORT=8080
 
-# AI Service (Required)
-DEEPSEEK_API_KEY=your-deepseek-api-key
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
-DEEPSEEK_MODEL=deepseek-chat
+# DeepSeek AI (Text Response)
+DEEPSEEK_API_KEY=sk-your-key
 ENABLE_AI=true
 
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/opencochat
-ENABLE_DATABASE=true
 ```
 
-### Start the Service
-
-```bash
-# Development mode
-bun run dev
-
-# Production mode
-bun start
-```
-
-Visit `http://localhost:8080`
-
-## Deployment
-
-### Docker Deployment (Recommended)
-
-```bash
-# Using Docker Compose
-docker-compose up -d
-
-# Or using Docker directly
-docker run -d \
-  --name opencochat \
-  -p 3002:3002 \
-  -p 8080:8080 \
-  -e DEEPSEEK_API_KEY=your-key \
-  ghcr.io/puckguo/opencochat:latest
-```
-
-### Production Deployment
-
-For detailed deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-## Voice Integration Guides
-
-### Alibaba Cloud ASR Integration
-
-Alibaba Cloud ASR provides real-time speech-to-text capabilities.
-
-#### 1. Configure Environment Variables
+### Voice Features Configuration
 
 ```env
-# Alibaba Cloud ASR Configuration
-DASHSCOPE_API_KEY=sk-your-dashscope-api-key
+# 1. Alibaba Cloud ASR - Real-time Speech Recognition (Voice → Text)
+DASHSCOPE_API_KEY=sk-your-dashscope-key
 ENABLE_TRANSCRIPTION=true
-```
 
-#### 2. Get API Key
-
-1. Log in to [Alibaba Cloud DashScope Console](https://dashscope.console.aliyun.com/)
-2. Create an API Key
-3. Enable real-time speech recognition service
-
-#### 3. Usage
-
-Once enabled, user voice in chat rooms will be automatically transcribed to text, allowing AI to respond based on the transcription.
-
-See [skill/aliyun/README.md](skill/aliyun/README.md) for complete integration guide.
-
----
-
-### Volcano Engine Real-time Voice Integration
-
-Volcano Engine Doubao end-to-end real-time voice model provides low-latency voice-to-voice dialogue capabilities.
-
-#### 1. Configure Environment Variables
-
-```env
-# Volcano Engine Configuration
+# 2. Volcano Engine End-to-End Voice Model (AI Voice Response)
 VOLCANO_APP_ID=your-app-id
 VOLCANO_ACCESS_KEY=your-access-key
 VOLCANO_SECRET_KEY=your-secret-key
 VOLCANO_ENDPOINT=wss://openspeech.bytedance.com/api/v3/realtime/dialogue
-VOLCANO_API_APP_KEY=PlgvMymc7f3tQnJ6
-VOLCANO_API_RESOURCE_ID=volc.speech.dialog
 ENABLE_VOICE_AI=true
 ```
 
-#### 2. Get Authentication
+### File Storage Configuration
 
-1. Log in to [Volcano Engine Console](https://console.volcengine.com/)
-2. Enable "End-to-End Real-time Voice Model" service
-3. Create Access Key in "Access Control"
-
-#### 3. Features
-
-- **End-to-end voice dialogue**: Voice input → AI processing → Voice output
-- **Real-time ASR**: Speech recognition results returned in real-time
-- **Streaming TTS**: AI voice synthesis plays in real-time
-- **Low latency**: End-to-end latency < 1 second
-
-See [skill/volcano-voice-ai-integration.md](skill/volcano-voice-ai-integration.md) for complete integration guide.
-
-## Usage Examples
-
-### Create a Voice Chat Room
-
-1. Visit `http://your-server:8080`
-2. Click "New Session"
-3. Enter session name and enable "AI Voice Assistant"
-4. Share the link with team members
-
-### Use AI Voice Assistant
-
-With Volcano Engine real-time voice enabled, users can talk directly to AI:
-
-1. Click the microphone button to start voice input
-2. AI listens in real-time as you speak
-3. AI responds with voice
-
-### Use AI Text Assistant
-
-Use `@ai` mention to invoke AI:
-
+```env
+# Alibaba Cloud OSS - AI Generated Files Storage
+VITE_OSS_ACCESS_KEY_ID=your-access-key
+VITE_OSS_ACCESS_KEY_SECRET=your-secret-key
+VITE_OSS_BUCKET=your-bucket
+VITE_OSS_REGION=oss-cn-beijing
+ENABLE_OSS=true
 ```
-@ai How can I optimize this project's performance?
-
-@ai Read README.md and summarize the content
-
-@ai Run npm test and analyze the results
-```
-
-## Project Structure
-
-```
-opencochat/
-├── multiplayer/           # Core server code
-│   ├── websocket-server.ts    # WebSocket server
-│   ├── voice-ai-service.ts    # Volcano Engine voice AI service
-│   ├── transcription.ts       # Alibaba Cloud ASR service
-│   ├── ai-service.ts          # DeepSeek AI service
-│   └── database.ts            # Database layer
-├── public/               # Frontend assets
-├── skill/                # Third-party skill integrations
-│   ├── aliyun/               # Alibaba Cloud RDS/OSS
-│   └── volcano-voice-ai-integration.md  # Volcano Engine integration docs
-├── docs/                 # Documentation
-└── docker-compose.yml    # Docker deployment config
-```
-
-## Tech Stack
-
-- **Runtime**: Bun / Node.js
-- **Real-time Communication**: WebSocket
-- **Database**: PostgreSQL
-- **AI Service**: DeepSeek API
-- **Speech Recognition**: Alibaba Cloud DashScope ASR
-- **Voice Dialogue**: Volcano Engine Doubao Real-time Voice Model
-- **File Storage**: Alibaba Cloud OSS (optional)
-
-## Contributing
-
-Contributions are welcome! Please submit Issues and Pull Requests.
-
-```bash
-# Fork and clone the repository
-git clone https://github.com/YOUR_USERNAME/opencochat.git
-cd opencochat
-
-# Install dependencies
-bun install
-
-# Run development server
-bun run dev
-```
-
-## License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
-
-## Acknowledgments
-
-- [DeepSeek](https://www.deepseek.com/) - AI capabilities
-- [Bun](https://bun.sh/) - JavaScript runtime
-- [Alibaba Cloud DashScope](https://dashscope.aliyun.com/) - Speech recognition
-- [Volcano Engine](https://www.volcengine.com/) - Real-time voice dialogue
 
 ---
 
-Maintained by the Open CoChat Community
+## 📖 Usage Guide
+
+### Create Voice Chat Room
+
+1. Open `http://your-server:8080`
+2. Click "New Session"
+3. Set room name and password (optional)
+4. Invite members to join
+
+### AI Auto-Intervention
+
+When users discuss in voice chat, AI will:
+1. **Listen in real-time**: Convert voice to text via Alibaba Cloud ASR
+2. **Smart judgment**: Analyze content to decide whether to intervene
+3. **Choose response mode**:
+   - Suitable for discussion/explanation → **Voice Response** (Volcano Engine)
+   - Requires code/files → **Text Response + File Generation** (DeepSeek)
+
+### Trigger AI File Operations
+
+In chat, you can directly say to AI:
+
+```
+"@ai help me write a Python crawler script to scrape weather data"
+"@ai convert this code to JavaScript version"
+"@ai generate a project weekly report summarizing today's discussion"
+```
+
+AI will:
+1. Generate file content
+2. Automatically upload to OSS
+3. Send download link in chat
+
+---
+
+## 🎯 Feature Details
+
+### 1. Alibaba Cloud ASR Real-time Speech Recognition
+
+- **Real-time transcription**: Convert voice to text while user speaks
+- **Streaming recognition**: Recognize as you speak, low latency
+- **Chinese optimized**: Optimized for Chinese speech
+
+Documentation: [skill/aliyun/README.md](skill/aliyun/README.md)
+
+### 2. Volcano Engine End-to-End Voice Model
+
+- **End-to-end voice dialogue**: Direct voice interaction without text relay
+- **Natural voice**: Doubao model with natural and fluent voice
+- **Low latency**: Response time < 1 second
+
+Documentation: [skill/volcano-voice-ai-integration.md](skill/volcano-voice-ai-integration.md)
+
+### 3. AI File Generation & Download
+
+Supported file types:
+- Code files (.js, .py, .ts, .java, etc.)
+- Documents (.md, .txt, .doc)
+- Data files (.json, .csv, .xml)
+- Config files (.yml, .env, .conf)
+
+Files are automatically uploaded to Alibaba Cloud OSS with temporary download links, supporting:
+- Link expiration settings (default 1 hour)
+- File size limits (default 10MB)
+- Historical file management
+
+---
+
+## 🛡️ Permission Management
+
+5-tier role system for fine-grained control of AI and user permissions:
+
+| Role | Permissions |
+|------|-------------|
+| **Owner** | Full permissions, including delete room |
+| **Admin** | Manage members, configure AI behavior |
+| **Member** | Normal chat, use AI features |
+| **Guest** | Chat only, no AI access |
+| **AI** | System role, auto-reply |
+
+Configurable permissions:
+- Whether to allow AI intervention
+- AI intervention mode (voice/text/mixed)
+- Whether to allow AI file generation
+- File download permissions
+
+---
+
+## 📁 Project Structure
+
+```
+opencochat/
+├── multiplayer/
+│   ├── websocket-server.ts      # WebSocket service core
+│   ├── voice-chat-service.ts    # Multiplayer voice chat management
+│   ├── transcription.ts         # Alibaba Cloud ASR integration
+│   ├── voice-ai-service.ts      # Volcano Engine voice model integration
+│   ├── ai-service.ts            # DeepSeek AI integration
+│   ├── file-sync.ts             # File generation & OSS upload
+│   └── tools/
+│       ├── file-tools.ts        # AI file operation tools
+│       └── terminal-tools.ts    # AI command execution tools
+├── public/
+│   └── index.html               # Frontend interface
+├── skill/
+│   ├── aliyun/                  # Alibaba Cloud RDS/OSS integration
+│   └── volcano-voice-ai-integration.md  # Volcano Engine integration docs
+└── docker-compose.yml
+```
+
+---
+
+## 🤝 Contributing
+
+Issues and Pull Requests are welcome!
+
+```bash
+git clone https://github.com/puckguo/opencochat.git
+cd opencochat
+bun install
+bun run dev
+```
+
+---
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE)
+
+---
+
+## 🙏 Acknowledgments
+
+- [DeepSeek](https://www.deepseek.com/) - Text AI capabilities
+- [Alibaba Cloud DashScope](https://dashscope.aliyun.com/) - Real-time speech recognition
+- [Volcano Engine](https://www.volcengine.com/) - End-to-end voice model
+- [Alibaba Cloud OSS](https://www.aliyun.com/product/oss) - File storage

@@ -1,299 +1,282 @@
-<p align="center">
-  <a href="https://github.com/puckguo/opencochat">
-    <img src="https://img.shields.io/badge/Open-CoChat-blue?style=for-the-badge" alt="Open CoChat logo" width="200">
-  </a>
-</p>
+# Open CoChat - 多人语音 AI 聊天室
 
-<h1 align="center">Open CoChat</h1>
-<p align="center">
-  <strong>AI 驱动的多人实时语音聊天平台</strong>
-</p>
-
-<p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">简体中文</a>
-</p>
+> 🎙️ 多人实时语音聊天 + AI 智能助手，支持语音/文字双模式交互，AI 可生成和编辑文件
 
 ---
 
-## 概述
+## ✨ 核心亮点
 
-**Open CoChat** 是一个开源的多人实时语音聊天平台，集成了强大的 AI 助手功能。基于 TypeScript、Bun 和 WebSocket 构建，支持：
+### 🎙️ 多人实时语音聊天
+- 支持多人同时在线语音聊天
+- 低延迟 WebSocket 实时传输
+- 语音质量清晰稳定
 
-- 多人实时语音对话
-- AI 实时语音交互（端到端语音对话）
-- 实时语音识别（ASR）
-- AI 文件访问和命令执行
-- 实时团队协作
+### 🤖 AI 实时介入群聊
+AI 助手可以**实时监听**群聊语音内容，并通过两种方式参与对话：
 
-适用于：
-- 需要 AI 辅助协作的开发团队
-- 在线教育课堂
-- 开源社区交流
-- 企业会议
+| 方式 | 说明 |
+|------|------|
+| **🗣️ 语音回复** | 使用火山引擎端到端语音大模型，AI 直接用语音回复 |
+| **💬 文字回复** | 使用 DeepSeek AI，AI 以文字形式参与讨论 |
 
-## 核心特性
+### 📁 AI 文件操作
+AI 可以在聊天过程中：
+- **生成文件**（代码、文档、报告等）
+- **编辑现有文件**
+- **提供文件下载链接**
+- 自动上传到阿里云 OSS，生成可下载链接
 
-### 实时语音协作
+---
 
-- 基于 WebSocket 的实时语音传输
-- 多人语音聊天室
-- 低延迟语音通信
-- 语音消息录制和回放
-- @提及用户和 AI 助手
+## 🏗️ 技术架构
 
-### AI 语音助手
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         用户端                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │  语音输入    │  │  文字输入    │  │  文件下载    │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                    WebSocket
+                         │
+┌────────────────────────▼────────────────────────────────────┐
+│                      Open CoChat 服务器                      │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │              阿里云 ASR 语音识别                      │   │
+│  │         实时语音 → 文字转录                           │   │
+│  └──────────────────────┬──────────────────────────────┘   │
+│                         │                                  │
+│  ┌──────────────────────▼──────────────────────────────┐   │
+│  │              AI 意图识别与处理                        │   │
+│  │    判断：语音回复 / 文字回复 / 文件操作                │   │
+│  └──────────────────────┬──────────────────────────────┘   │
+│                         │                                  │
+│         ┌───────────────┼───────────────┐                  │
+│         ▼               ▼               ▼                  │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
+│  │ 火山引擎    │ │ DeepSeek    │ │ 文件生成    │          │
+│  │ 语音大模型  │ │ 文本 AI     │ │ & 编辑      │          │
+│  │ (语音回复)  │ │ (文字回复)  │ │ (OSS上传)   │          │
+│  └─────────────┘ └─────────────┘ └─────────────┘          │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- **DeepSeek AI** 集成，提供智能响应
-- **火山引擎豆包实时语音模型**支持，实现端到端语音对话
-- **阿里云 ASR** 集成，实时语音识别
-- **文件系统访问**：AI 可以读取和分析项目文件
-- **命令执行**：AI 可以运行终端命令并显示结果
+---
 
-### 语音技术集成
+## 🚀 快速开始
 
-| 功能 | 说明 | 接入文档 |
-|------|------|----------|
-| 阿里云 ASR | 实时语音识别 | [skill/aliyun-asr.md](#阿里云-asr-接入) |
-| 火山引擎实时语音 | 端到端语音对话 | [skill/volcano-voice.md](#火山引擎实时语音接入) |
-| DeepSeek AI | 文本AI对话 | 内置支持 |
-
-### 安全与权限
-
-- 5 级角色系统（所有者、管理员、成员、访客、AI）
-- 30+ 细粒度权限
-- 可选密码保护房间
-- 速率限制和滥用防护
-
-## 快速开始
-
-### 环境要求
-
-- CPU：2 核
-- RAM：4GB
-- 磁盘：10GB
-- 操作系统：Linux/macOS/Windows
-- Node.js 18+ 或 Bun 1.1+
-
-### 安装步骤
+### Docker 一键部署
 
 ```bash
-# 克隆仓库
+# 1. 克隆仓库
 git clone https://github.com/puckguo/opencochat.git
 cd opencochat
 
-# 安装依赖（使用 Bun）
-bun install
-
-# 或使用 npm
-npm install
-
-# 复制环境变量模板
+# 2. 配置环境变量
 cp .env.example .env
+# 编辑 .env，填入 API 密钥
 
-# 编辑 .env 文件，填入必要的配置
-nano .env
+# 3. 启动
+docker-compose up -d
+
+# 4. 访问 http://localhost:8080
 ```
 
-### 必需的环境变量
+### 本地开发
+
+```bash
+# 安装依赖
+bun install
+
+# 配置环境变量
+cp .env.example .env
+
+# 启动开发服务器
+bun run dev
+```
+
+---
+
+## 🔧 环境变量配置
+
+### 必需配置
 
 ```env
-# WebSocket 服务器配置
+# 基础服务
 WS_PORT=3002
-WS_HOST=0.0.0.0
 HTTP_PORT=8080
 
-# AI 服务（必需）
-DEEPSEEK_API_KEY=your-deepseek-api-key
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
-DEEPSEEK_MODEL=deepseek-chat
+# DeepSeek AI（文字回复）
+DEEPSEEK_API_KEY=sk-your-key
 ENABLE_AI=true
 
 # 数据库
 DATABASE_URL=postgresql://user:password@localhost:5432/opencochat
-ENABLE_DATABASE=true
 ```
 
-### 启动服务
-
-```bash
-# 开发模式
-bun run dev
-
-# 生产模式
-bun start
-```
-
-访问 `http://localhost:8080`
-
-## 部署指南
-
-### Docker 部署（推荐）
-
-```bash
-# 使用 Docker Compose
-docker-compose up -d
-
-# 或直接使用 Docker
-docker run -d \
-  --name opencochat \
-  -p 3002:3002 \
-  -p 8080:8080 \
-  -e DEEPSEEK_API_KEY=your-key \
-  ghcr.io/puckguo/opencochat:latest
-```
-
-### 生产环境部署
-
-详细部署说明请参考 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
-
-## 语音功能接入指南
-
-### 阿里云 ASR 接入
-
-阿里云 ASR（自动语音识别）提供实时语音转文字能力。
-
-#### 1. 配置环境变量
+### 语音功能配置
 
 ```env
-# 阿里云 ASR 配置
-DASHSCOPE_API_KEY=sk-your-dashscope-api-key
+# 1. 阿里云 ASR - 实时语音识别（语音→文字）
+DASHSCOPE_API_KEY=sk-your-dashscope-key
 ENABLE_TRANSCRIPTION=true
-```
 
-#### 2. 获取 API Key
-
-1. 登录 [阿里云 DashScope 控制台](https://dashscope.console.aliyun.com/)
-2. 创建 API Key
-3. 开通实时语音识别服务
-
-#### 3. 使用方式
-
-启用后，用户在语音聊天中的语音将自动转录为文字，AI 可以基于转录内容进行回复。
-
-#### 详细文档
-
-查看 [skill/aliyun/README.md](skill/aliyun/README.md) 获取完整的阿里云集成指南。
-
----
-
-### 火山引擎实时语音接入
-
-火山引擎豆包端到端实时语音大模型提供低延迟的语音到语音对话能力。
-
-#### 1. 配置环境变量
-
-```env
-# 火山引擎配置
+# 2. 火山引擎端到端语音大模型（AI语音回复）
 VOLCANO_APP_ID=your-app-id
 VOLCANO_ACCESS_KEY=your-access-key
 VOLCANO_SECRET_KEY=your-secret-key
 VOLCANO_ENDPOINT=wss://openspeech.bytedance.com/api/v3/realtime/dialogue
-VOLCANO_API_APP_KEY=PlgvMymc7f3tQnJ6
-VOLCANO_API_RESOURCE_ID=volc.speech.dialog
 ENABLE_VOICE_AI=true
 ```
 
-#### 2. 获取认证信息
+### 文件存储配置
 
-1. 登录 [火山引擎控制台](https://console.volcengine.com/)
-2. 开通"端到端实时语音大模型"服务
-3. 在「访问控制」创建 Access Key
+```env
+# 阿里云 OSS - AI 生成文件的上传存储
+VITE_OSS_ACCESS_KEY_ID=your-access-key
+VITE_OSS_ACCESS_KEY_SECRET=your-secret-key
+VITE_OSS_BUCKET=your-bucket
+VITE_OSS_REGION=oss-cn-beijing
+ENABLE_OSS=true
+```
 
-#### 3. 功能特性
+---
 
-- **端到端语音对话**：语音输入 → AI 处理 → 语音输出
-- **实时 ASR**：语音识别结果实时返回
-- **流式 TTS**：AI 语音合成实时播放
-- **低延迟**：端到端延迟 < 1 秒
-
-#### 详细文档
-
-查看 [skill/volcano-voice-ai-integration.md](skill/volcano-voice-ai-integration.md) 获取完整的集成指南。
-
-## 使用示例
+## 📖 使用指南
 
 ### 创建语音聊天室
 
-1. 访问 `http://your-server:8080`
-2. 点击"新建会话"
-3. 输入会话名称并启用"AI 语音助手"
-4. 分享链接给团队成员
+1. 打开 `http://your-server:8080`
+2. 点击「新建会话」
+3. 设置房间名称和密码（可选）
+4. 邀请成员加入
 
-### 使用 AI 语音助手
+### AI 自动介入
 
-启用火山引擎实时语音后，用户可以直接与 AI 语音对话：
+当用户在语音聊天中讨论时，AI 会：
+1. **实时监听**：通过阿里云 ASR 将语音转为文字
+2. **智能判断**：分析内容决定是否需要介入
+3. **选择回复方式**：
+   - 适合讨论/解释 → **语音回复**（火山引擎）
+   - 需要代码/文件 → **文字回复 + 文件生成**（DeepSeek）
 
-1. 点击麦克风按钮开始语音输入
-2. 说话时，AI 会实时聆听
-3. AI 将以语音形式回复
+### 触发 AI 文件操作
 
-### 使用 AI 文本助手
-
-使用 `@ai` 提及调用 AI：
+在聊天中可以直接对 AI 说：
 
 ```
-@ai 如何优化这个项目的性能？
-
-@ai 读取 README.md 并总结内容
-
-@ai 运行 npm test 并分析结果
+"@ai 帮我写一个 Python 爬虫脚本，抓取天气数据"
+"@ai 把这个代码改成 JavaScript 版本"
+"@ai 生成一份项目周报，总结今天的讨论"
 ```
 
-## 项目结构
+AI 会：
+1. 生成文件内容
+2. 自动上传到 OSS
+3. 在聊天中发送下载链接
+
+---
+
+## 🎯 功能详解
+
+### 1. 阿里云 ASR 实时语音识别
+
+- **实时转录**：用户说话的同时转为文字
+- **流式识别**：边说边识别，低延迟
+- **支持中文**：针对中文优化
+
+文档：[skill/aliyun/README.md](skill/aliyun/README.md)
+
+### 2. 火山引擎端到端语音大模型
+
+- **端到端语音对话**：无需文字中转，直接语音交互
+- **音色自然**：豆包大模型，语音自然流畅
+- **低延迟**：响应时间 < 1 秒
+
+文档：[skill/volcano-voice-ai-integration.md](skill/volcano-voice-ai-integration.md)
+
+### 3. AI 文件生成与下载
+
+支持生成的文件类型：
+- 代码文件（.js, .py, .ts, .java 等）
+- 文档（.md, .txt, .doc）
+- 数据文件（.json, .csv, .xml）
+- 配置文件（.yml, .env, .conf）
+
+文件自动上传到阿里云 OSS，生成临时下载链接，支持：
+- 链接有效期设置（默认 1 小时）
+- 文件大小限制（默认 10MB）
+- 历史文件管理
+
+---
+
+## 🛡️ 权限管理
+
+5 级角色系统，精细控制 AI 和用户的权限：
+
+| 角色 | 权限 |
+|------|------|
+| **Owner** | 全部权限，包括删除房间 |
+| **Admin** | 管理成员、配置 AI 行为 |
+| **Member** | 正常发言、使用 AI 功能 |
+| **Guest** | 仅可发言，不可使用 AI |
+| **AI** | 系统角色，自动回复 |
+
+可配置权限：
+- 是否允许 AI 介入
+- AI 介入方式（语音/文字/混合）
+- 是否允许 AI 生成文件
+- 文件下载权限
+
+---
+
+## 📁 项目结构
 
 ```
 opencochat/
-├── multiplayer/           # 核心服务端代码
-│   ├── websocket-server.ts    # WebSocket 服务器
-│   ├── voice-ai-service.ts    # 火山引擎语音 AI 服务
-│   ├── transcription.ts       # 阿里云 ASR 服务
-│   ├── ai-service.ts          # DeepSeek AI 服务
-│   └── database.ts            # 数据库层
-├── public/               # 前端资源
-├── skill/                # 第三方技能集成
-│   ├── aliyun/               # 阿里云 RDS/OSS
+├── multiplayer/
+│   ├── websocket-server.ts      # WebSocket 服务核心
+│   ├── voice-chat-service.ts    # 多人语音聊天管理
+│   ├── transcription.ts         # 阿里云 ASR 接入
+│   ├── voice-ai-service.ts      # 火山引擎语音模型接入
+│   ├── ai-service.ts            # DeepSeek AI 接入
+│   ├── file-sync.ts             # 文件生成与 OSS 上传
+│   └── tools/
+│       ├── file-tools.ts        # AI 文件操作工具
+│       └── terminal-tools.ts    # AI 命令执行工具
+├── public/
+│   └── index.html               # 前端界面
+├── skill/
+│   ├── aliyun/                  # 阿里云 RDS/OSS 集成
 │   └── volcano-voice-ai-integration.md  # 火山引擎集成文档
-├── docs/                 # 文档
-└── docker-compose.yml    # Docker 部署配置
+└── docker-compose.yml
 ```
 
-## 技术栈
+---
 
-- **运行时**: Bun / Node.js
-- **实时通信**: WebSocket
-- **数据库**: PostgreSQL
-- **AI 服务**: DeepSeek API
-- **语音识别**: 阿里云 DashScope ASR
-- **语音对话**: 火山引擎豆包实时语音模型
-- **文件存储**: 阿里云 OSS（可选）
-
-## 贡献
+## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
 ```bash
-# Fork 并克隆仓库
-git clone https://github.com/YOUR_USERNAME/opencochat.git
+git clone https://github.com/puckguo/opencochat.git
 cd opencochat
-
-# 安装依赖
 bun install
-
-# 运行开发服务器
 bun run dev
 ```
 
-## 许可证
+---
 
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
+## 📄 许可证
 
-## 致谢
-
-- [DeepSeek](https://www.deepseek.com/) - AI 能力
-- [Bun](https://bun.sh/) - JavaScript 运行时
-- [阿里云 DashScope](https://dashscope.aliyun.com/) - 语音识别
-- [火山引擎](https://www.volcengine.com/) - 实时语音对话
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
-由 Open CoChat 社区维护
+## 🙏 致谢
+
+- [DeepSeek](https://www.deepseek.com/) - 文本 AI 能力
+- [阿里云 DashScope](https://dashscope.aliyun.com/) - 实时语音识别
+- [火山引擎](https://www.volcengine.com/) - 端到端语音大模型
+- [阿里云 OSS](https://www.aliyun.com/product/oss) - 文件存储
