@@ -1,6 +1,13 @@
+<p align="center">
+  <img src="public/icon.png" alt="Open CoChat" width="120">
+</p>
+
 # Open CoChat - Multiplayer Voice AI Chat Room
 
-> 🎙️ Real-time multiplayer voice chat + AI assistant, supporting voice/text dual-mode interaction, AI can generate and edit files
+<p align="center">
+  <strong>🎙️ Real-time multiplayer voice chat + AI assistant</strong><br>
+  Supporting voice/text dual-mode interaction, AI can generate and edit files
+</p>
 
 ---
 

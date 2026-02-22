@@ -1,6 +1,13 @@
+<p align="center">
+  <img src="public/icon.png" alt="Open CoChat" width="120">
+</p>
+
 # Open CoChat - 多人语音 AI 聊天室
 
-> 🎙️ 多人实时语音聊天 + AI 智能助手，支持语音/文字双模式交互，AI 可生成和编辑文件
+<p align="center">
+  <strong>🎙️ 多人实时语音聊天 + AI 智能助手</strong><br>
+  支持语音/文字双模式交互，AI 可生成和编辑文件
+</p>
 
 ---
 
