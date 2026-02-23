@@ -243,7 +243,7 @@ export interface ToolLoopOptions {
 }
 
 export const DEFAULT_TOOL_LOOP_OPTIONS: ToolLoopOptions = {
-  maxIterations: 10,
+  maxIterations: 15,
 }
 
 export class ToolExecutor {
@@ -527,19 +527,21 @@ export function setTaskUpdateCallback(callback: TaskUpdateCallback | null): void
 export function createPlanTasksTool(): Tool {
   return {
     name: "plan_tasks",
-    description: `Create a task plan for complex multi-step operations. Use this tool BEFORE starting complex tasks to:
-1. Break down the task into clear steps
-2. Show the user what you plan to do
-3. Track progress as you complete each step
+    description: `Create a task plan for COMPLEX multi-step operations ONLY.
 
-When to use:
-- Complex tasks that require multiple steps (3+ steps)
-- Tasks that might take time and need progress tracking
-- Tasks where the user wants to see step-by-step progress
+🚨 DO NOT use this tool for:
+- Simple questions or explanations
+- Single file read/write operations
+- Quick tasks (save, list, search)
+- Direct commands that can be done in 1-2 steps
 
-When NOT to use:
-- Simple single-step requests
-- Quick questions that can be answered directly`,
+✅ ONLY use for truly complex tasks like:
+- Building a complete application from scratch
+- Multi-file refactoring with dependencies
+- Complex debugging requiring investigation
+- User explicitly requests step-by-step breakdown
+
+When in doubt: DON'T use this tool. Just answer directly or use the specific tool needed.`,
     parameters: {
       type: "object",
       properties: {

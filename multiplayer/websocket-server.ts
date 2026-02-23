@@ -22,6 +22,8 @@ import { ConversationSummaryManager, createSummaryManager } from "./conversation
 import { VoiceChatService, getVoiceChatService, type VoiceTranscript } from "./voice-chat-service"
 import { DailyReportAPIHandler, initializeDailyReportAPIHandler } from "./daily-report"
 import { VoiceAIService, getVoiceAIService } from "./voice-ai-service"
+import { UserService, initializeUserService, getUserService } from "./user-service"
+import { handleAuthAPI } from "./auth-api"
 
 // 版本标记 - 用于验证代码是否更新
 
@@ -68,6 +70,9 @@ interface WebSocketData {
   passwordQuestion?: string
   passwordAnswer?: string
   rolePassword?: string // 角色密码（用于验证owner/admin身份）
+  deviceId?: string // 设备ID，用于关联匿名会话
+  isRegisteredUser?: boolean // 是否是已注册用户
+  userAvatar?: string | null // 用户头像URL
 }
 
 interface Room {
@@ -506,6 +511,10 @@ export class MultiplayerWebSocketServer {
       try {
         this.db = getDatabaseManager()
         await this.db.connect()
+
+        // Initialize user service
+        initializeUserService(this.db)
+        console.log("[WebSocket] User service initialized")
       } catch (error) {
         console.error("[WebSocket] Database initialization failed:", error)
         this.enableDatabase = false
@@ -532,7 +541,8 @@ export class MultiplayerWebSocketServer {
           // Initialize AI Agent with tools
           this.aiAgent = initializeAIAgent({
             basePath: process.cwd(),
-            maxToolIterations: 10,
+            maxToolIterations: 15,
+            language: 'zh',  // 使用中文系统提示词
             enableAutoSave: true,        // 启用自动保存聊天记录
             autoSaveThreshold: 40,       // 当消息达到40条时触发保存
             autoSaveKeepCount: 10,       // 保存后保留最近10条消息
@@ -1212,6 +1222,19 @@ export class MultiplayerWebSocketServer {
           }
         }
 
+        // 用户认证API路由
+        if (url.pathname.startsWith("/api/auth/") || url.pathname.startsWith("/api/user/")) {
+          const userService = getUserService()
+          if (userService) {
+            const response = await handleAuthAPI(req, url, userService)
+            if (response) return response
+          }
+          return new Response(
+            JSON.stringify({ error: "User service not initialized" }),
+            { status: 503, headers: corsHeaders }
+          )
+        }
+
         // 获取 token 从 URL 参数
         const token = url.searchParams.get("token")
         const sessionId = url.searchParams.get("session") || "default"
@@ -1220,6 +1243,7 @@ export class MultiplayerWebSocketServer {
         const passwordQuestion = url.searchParams.get("pwd_question") || undefined
         const passwordAnswer = url.searchParams.get("pwd_answer") || undefined
         const rolePassword = url.searchParams.get("role_password") || undefined
+        const deviceId = url.searchParams.get("device_id") || undefined // 设备ID
 
         // 强制输出日志
         console.error(`[DEBUG] Connection attempt: session=${sessionId}, role=${userRole}, pwdQ=${passwordQuestion}, pwdA=${passwordAnswer}`)
@@ -1250,12 +1274,14 @@ export class MultiplayerWebSocketServer {
             passwordQuestion,
             passwordAnswer,
             rolePassword,
+            deviceId,
+            isRegisteredUser: false,
           } as WebSocketData,
         })
 
-        // 如果升级成功，返回undefined
+        // 如果升级成功，Bun会自动处理，不需要返回Response
         if (success) {
-          return undefined
+          return new Response("WebSocket upgraded", { status: 101 })
         }
 
         // 如果不是WebSocket请求，提供静态文件服务
@@ -1329,34 +1355,76 @@ export class MultiplayerWebSocketServer {
 
   private async handleOpen(ws: ServerWebSocket<WebSocketData>): Promise<void> {
 
-    // 如果有 token，进行 Supabase 认证
+    // 如果有 token，尝试认证
     if (ws.data.token) {
-      try {
-        const auth = await authenticateWebSocket({
-          token: ws.data.token,
-          sessionId: ws.data.sessionId,
-        })
-
-        if (auth.success && auth.user) {
-          ws.data.userId = auth.user.id
-          ws.data.userName = auth.user.name
-          ws.data.userRole = auth.user.role as UserRole
-          ws.data.isAuthenticated = true
-        } else {
-          ws.data.isAuthenticated = false
-          // 如果不允许匿名，关闭连接
+      // 首先尝试用户系统的 JWT 认证
+      const userService = getUserService()
+      if (userService) {
+        try {
+          const authResult = await userService.verifyToken(ws.data.token)
+          if (authResult.valid && authResult.user && authResult.payload) {
+            ws.data.userId = authResult.user.id
+            ws.data.userName = authResult.user.username
+            ws.data.userRole = ws.data.userRole || "member" // Keep URL role or default to member
+            ws.data.isAuthenticated = true
+            ws.data.isRegisteredUser = true
+            ws.data.deviceId = authResult.payload.deviceId
+            ws.data.userAvatar = authResult.user.avatar || null  // 设置用户头像
+            console.log(`[WebSocket] User authenticated: ${authResult.user.username} (${authResult.user.id})`)
+          } else {
+            // Try Supabase auth as fallback
+            const auth = await authenticateWebSocket({
+              token: ws.data.token,
+              sessionId: ws.data.sessionId,
+            })
+            if (auth.success && auth.user) {
+              ws.data.userId = auth.user.id
+              ws.data.userName = auth.user.name
+              ws.data.userRole = auth.user.role as UserRole
+              ws.data.isAuthenticated = true
+            } else if (process.env.ALLOW_ANONYMOUS !== "true") {
+              this.sendError(ws, "Authentication failed")
+              ws.close(1008, "Authentication failed")
+              return
+            }
+          }
+        } catch (error) {
+          console.error("[WebSocket] Auth error:", error)
           if (process.env.ALLOW_ANONYMOUS !== "true") {
-            this.sendError(ws, "Authentication failed: " + auth.error)
-            ws.close(1008, "Authentication failed")
+            this.sendError(ws, "Authentication error")
+            ws.close(1008, "Authentication error")
             return
           }
         }
-      } catch (error) {
-        console.error("[WebSocket] Auth error:", error)
-        if (process.env.ALLOW_ANONYMOUS !== "true") {
-          this.sendError(ws, "Authentication error")
-          ws.close(1008, "Authentication error")
-          return
+      } else {
+        // Fallback to Supabase auth
+        try {
+          const auth = await authenticateWebSocket({
+            token: ws.data.token,
+            sessionId: ws.data.sessionId,
+          })
+
+          if (auth.success && auth.user) {
+            ws.data.userId = auth.user.id
+            ws.data.userName = auth.user.name
+            ws.data.userRole = auth.user.role as UserRole
+            ws.data.isAuthenticated = true
+          } else {
+            ws.data.isAuthenticated = false
+            // 如果不允许匿名，关闭连接
+            if (process.env.ALLOW_ANONYMOUS !== "true") {
+              this.sendError(ws, "Authentication failed: " + auth.error)
+              ws.close(1008, "Authentication failed")
+              return
+            }
+          }
+        } catch (error) {
+          console.error("[WebSocket] Auth error:", error)
+          if (process.env.ALLOW_ANONYMOUS !== "true") {
+            this.sendError(ws, "Authentication error")
+            ws.close(1008, "Authentication error")
+            return
+          }
         }
       }
     } else if (process.env.ENABLE_SUPABASE_AUTH === "true" && process.env.ALLOW_ANONYMOUS !== "true") {
@@ -1533,6 +1601,18 @@ export class MultiplayerWebSocketServer {
           joinedAt: new Date().toISOString(),
           lastSeen: new Date().toISOString(),
         })
+
+        // Record device session for anonymous users or user session for registered users
+        const userService = getUserService()
+        if (userService && ws.data.deviceId) {
+          if (ws.data.isRegisteredUser && ws.data.userId) {
+            // Registered user - record user session
+            await userService.recordUserSession(ws.data.userId, sessionId, ws.data.deviceId)
+          } else {
+            // Anonymous user - record device session
+            await userService.recordDeviceSession(ws.data.deviceId, sessionId)
+          }
+        }
       } catch (error) {
         console.error("[WebSocket] Database save participant error:", error)
       }
@@ -1561,6 +1641,7 @@ export class MultiplayerWebSocketServer {
           userName,
           userRole,
           joinedAt: new Date().toISOString(),
+          avatar: ws.data.userAvatar || null,  // 包含用户头像
         },
       },
       [userId]
@@ -4614,16 +4695,35 @@ ${context}
 
     // 检查是否已有共享会话
     if (this.voiceAIService.hasSharedSession(sessionId)) {
-      // 加入现有会话
+      // 加入现有会话（不发送聊天记录，只有第一个用户才发送）
       this.voiceAIService.joinSharedSession(sessionId, userId, userName || userId)
     } else {
-      // 创建新的共享会话，启用唤醒词模式
+      // 第一个用户创建新的共享会话：获取聊天历史，在会话开始时发送给AI
+      let chatHistory: Array<{role: 'user' | 'ai', text: string, userName?: string, timestamp?: string}> = []
+
+      if (this.enableDatabase && this.db) {
+        try {
+          const dbMessages = await this.db.getMessages(sessionId, 30)
+          chatHistory = dbMessages.map((msg: any) => ({
+            role: msg.role === 'assistant' ? 'ai' : 'user',
+            text: msg.content,
+            userName: msg.sender_name,
+            timestamp: msg.created_at,
+          }))
+          console.log(`[WebSocket] Fetched ${chatHistory.length} messages for voice AI context in session ${sessionId}`)
+        } catch (dbError) {
+          console.error('[ChatVoiceAI] Error fetching chat history from DB:', dbError)
+        }
+      }
+
+      // 创建新的共享会话，传入聊天历史
       const started = await this.voiceAIService.startSharedSession(
         sessionId,
         userId,
         userName || userId,
         voiceType || 'zh_female_tianmeixiaoyuan_moon_bigtts',
-        []
+        [],
+        chatHistory
       )
 
       if (!started) {
@@ -4675,7 +4775,7 @@ ${context}
     }
 
     // ASR 结果回调
-    this.voiceAIService.onSharedASRResult = (sid, userId, userName, text, isInterim) => {
+    this.voiceAIService.onSharedASRResult = async (sid, userId, userName, text, isInterim) => {
       if (sid !== sessionId) return
 
       const room = this.rooms.get(sid)
@@ -4695,10 +4795,41 @@ ${context}
           participant.send(JSON.stringify(message))
         }
       }
+
+      // 最终结果时保存到数据库
+      if (!isInterim && text) {
+        const chatMessage: ChatMessage = {
+          id: `voice_ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          sessionId: sid,
+          senderId: userId,
+          senderName: userName,
+          senderRole: "member",
+          type: "text",
+          content: `[语音] ${text}`,
+          mentions: [],
+          mentionsAI: false,
+          timestamp: new Date().toISOString(),
+        }
+
+        // 添加到房间消息列表
+        room.messages.push(chatMessage)
+        if (room.messages.length > 1000) {
+          room.messages = room.messages.slice(-1000)
+        }
+
+        // 保存到数据库
+        if (this.enableDatabase && this.db) {
+          try {
+            await this.db.saveMessage(sid, chatMessage)
+          } catch (error) {
+            console.error("[ChatVoiceAI] Failed to save ASR message to database:", error)
+          }
+        }
+      }
     }
 
     // AI 响应回调
-    this.voiceAIService.onSharedAIResponse = (sid, text) => {
+    this.voiceAIService.onSharedAIResponse = async (sid, text) => {
       if (sid !== sessionId) return
 
       const room = this.rooms.get(sid)
@@ -4713,6 +4844,37 @@ ${context}
       for (const [participantId, participant] of room.participants) {
         if (this.chatVoiceAISessions.has(participantId)) {
           participant.send(JSON.stringify(message))
+        }
+      }
+
+      // 保存 AI 响应到数据库
+      if (text) {
+        const aiMessage: ChatMessage = {
+          id: `voice_ai_response_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          sessionId: sid,
+          senderId: 'ai_assistant',
+          senderName: '智能助手',
+          senderRole: "assistant",
+          type: "text",
+          content: text,
+          mentions: [],
+          mentionsAI: false,
+          timestamp: new Date().toISOString(),
+        }
+
+        // 添加到房间消息列表
+        room.messages.push(aiMessage)
+        if (room.messages.length > 1000) {
+          room.messages = room.messages.slice(-1000)
+        }
+
+        // 保存到数据库
+        if (this.enableDatabase && this.db) {
+          try {
+            await this.db.saveMessage(sid, aiMessage)
+          } catch (error) {
+            console.error("[ChatVoiceAI] Failed to save AI response to database:", error)
+          }
         }
       }
     }

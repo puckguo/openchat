@@ -1,294 +1,379 @@
 <p align="center">
-  <img src="public/icon.png" alt="Open CoChat" width="120">
+  <a href="https://github.com/opencode-chat/opencode-chat">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://opencode.ai/logo-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://opencode.ai/logo-light.svg">
+      <img src="https://opencode.ai/logo-light.svg" alt="Open CoChat logo" width="200">
+    </picture>
+  </a>
 </p>
 
-# Open CoChat - Multiplayer Voice AI Chat Room
+<h1 align="center">Open CoChat</h1>
+<p align="center">
+  <strong>AI-Powered Multiplayer Collaboration Space</strong>
+</p>
 
 <p align="center">
-  <strong>🎙️ Real-time multiplayer voice chat + AI assistant</strong><br>
-  Supporting voice/text dual-mode interaction, AI can generate and edit files<br><br>
-  English | <a href="README.zh.md">简体中文</a>
+  <a href="https://github.com/opencode-chat/opencode-chat/stargazers">
+    <img alt="GitHub Stars" src="https://img.shields.io/github/stars/opencode-chat/opencode-chat?style=flat-square&logo=github">
+  </a>
+  <a href="https://github.com/opencode-chat/opencode-chat/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/opencode-chat/opencode-chat?style=flat-square">
+  </a>
+  <a href="https://github.com/opencode-chat/opencode-chat/actions/workflows/ci.yml">
+    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/opencode-chat/opencode-chat/ci.yml?branch=main&style=flat-square">
+  </a>
+  <a href="https://discord.gg/opencode">
+    <img alt="Discord" src="https://img.shields.io/discord/1391832426048651334?style=flat-square&label=discord&logo=discord">
+  </a>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> | <a href="README.zh.md">简体中文</a>
 </p>
 
 ---
 
-## 📋 About
+## Overview
 
-**Open CoChat** is an open-source multiplayer real-time voice chat platform with integrated AI assistant, supporting voice/text dual-mode interaction where AI can intervene in group chats in real-time, generate and edit files.
+**Open CoChat** is an open-source multiplayer chat platform with integrated AI assistant capabilities. Built with TypeScript, Bun, and WebSocket, it enables real-time team collaboration where AI can read files, execute commands, and participate alongside team members.
 
-## ✨ Core Highlights
+Unlike traditional chat platforms, Open CoChat brings AI as a first-class citizen with powerful tool-calling capabilities - allowing it to browse your project files, run terminal commands, and provide contextually aware assistance directly in the conversation.
 
-### 🎙️ Multiplayer Real-time Voice Chat
-- Support multiple users online voice chat simultaneously
-- Low-latency WebSocket real-time transmission
-- Clear and stable voice quality
+Perfect for:
+- Development teams wanting AI-assisted code review and collaboration
+- Educational groups learning with AI-powered explanations
+- Open-source communities building with AI contributors
+- Anyone wanting a self-hosted AI chat solution with full control
 
-### 🤖 AI Real-time Group Chat Intervention
-AI assistants can **listen in real-time** to group voice conversations and participate through two modes:
+## Key Features
 
-| Mode | Description |
-|------|-------------|
-| **🗣️ Voice Response** | Using Volcano Engine end-to-end voice model, AI replies directly with voice |
-| **💬 Text Response** | Using DeepSeek AI, AI participates in discussions via text |
+### Real-time Collaboration
 
-### 📁 AI File Operations
-AI can during chat:
-- **Generate files** (code, documents, reports, etc.)
-- **Edit existing files**
-- **Provide file download links**
-- Automatically upload to Alibaba Cloud OSS and generate downloadable links
+- WebSocket-powered real-time messaging
+- Multi-user chat rooms with live sync
+- @mentions for users and AI assistant
+- Message threading and reactions
+- Typing indicators and presence detection
+- Message editing and deletion history
 
----
+### AI Assistant Capabilities
 
-## 🏗️ Architecture
+- **DeepSeek AI** integration for intelligent responses
+- **File System Access**: AI can read and analyze project files
+- **Command Execution**: AI can run terminal commands and show results
+- **Context-Aware Conversations**: Remembers chat history and project context
+- **Auto-Summarization**: Automatically creates conversation summaries
+- **Tool Calling**: Secure file operations and code execution
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Client                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Voice Input │  │  Text Input  │  │ File Download│      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└────────────────────────┬────────────────────────────────────┘
-                         │
-                    WebSocket
-                         │
-┌────────────────────────▼────────────────────────────────────┐
-│                      Open CoChat Server                      │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │           Alibaba Cloud ASR Speech Recognition       │   │
-│  │         Real-time Voice → Text Transcription       │   │
-│  └──────────────────────┬──────────────────────────────┘   │
-│                         │                                  │
-│  ┌──────────────────────▼──────────────────────────────┐   │
-│  │              AI Intent Recognition & Processing     │   │
-│  │    Decision: Voice Reply / Text Reply / File Op    │   │
-│  └──────────────────────┬──────────────────────────────┘   │
-│                         │                                  │
-│         ┌───────────────┼───────────────┐                  │
-│         ▼               ▼               ▼                  │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐          │
-│  │ Volcano     │ │ DeepSeek    │ │ File Gen    │          │
-│  │ Voice Model │ │ Text AI     │ │ & Edit      │          │
-│  │ (Voice)     │ │ (Text)      │ │ (OSS Upload)│          │
-│  └─────────────┘ └─────────────┘ └─────────────┘          │
-└─────────────────────────────────────────────────────────────┘
-```
+### Rich Media Support
 
----
+- Image sharing with inline preview
+- Voice messages with transcription (OpenAI Whisper)
+- File uploads with cloud storage (Alibaba Cloud OSS)
+- Code snippet sharing with syntax highlighting
+- Markdown rendering for AI responses
 
-## 🚀 Quick Start
+### Security & Permissions
 
-### Docker One-Click Deployment
+- 5-tier role system (Owner, Admin, Member, Guest, AI)
+- 30+ granular permissions
+- Optional password-protected rooms
+- Supabase authentication support
+- Rate limiting and abuse prevention
+
+### Data & Storage
+
+- PostgreSQL database for message persistence
+- Cloud file storage (OSS) with automatic backups
+- Conversation history with full export
+- AI memory management with auto-cleanup
+
+## Quick Start
+
+### One-Command Docker Deployment
+
+The fastest way to get started:
 
 ```bash
-# 1. Clone repository
-git clone https://github.com/puckguo/opencochat.git
-cd opencochat
+docker run -d \
+  --name opencode-chat \
+  -p 3002:3002 \
+  -e DEEPSEEK_API_KEY=your-key \
+  ghcr.io/opencode-chat/opencode-chat:latest
+```
 
-# 2. Configure environment variables
+### Using Docker Compose (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/opencode-chat/opencode-chat.git
+cd opencode-chat
+
+# Copy environment file
 cp .env.example .env
-# Edit .env, fill in API keys
 
-# 3. Start
+# Edit .env with your DeepSeek API key
+nano .env
+
+# Start all services (includes PostgreSQL)
 docker-compose up -d
-
-# 4. Visit http://localhost:8080
 ```
 
-### Local Development
+Access the chat at `http://localhost:3000`
+
+### Manual Installation
 
 ```bash
-# Install dependencies
-bun install
+# Install Bun
+curl -fsSL https://bun.sh/install | bash
 
-# Configure environment variables
-cp .env.example .env
+# Clone repository
+git clone https://github.com/opencode-chat/opencode-chat.git
+cd opencode-chat
 
-# Start development server
-bun run dev
+# Run setup script
+./scripts/setup.sh
+
+# Start the server
+./scripts/start.sh
 ```
 
----
+## Self-Hosting Guide
 
-## 🔧 Environment Variables
+### Minimum Requirements
 
-### Required Configuration
+- CPU: 2 cores
+- RAM: 4GB
+- Disk: 10GB
+- OS: Linux/macOS/Windows
+
+### Required Environment Variables
+
+Create a `.env` file:
 
 ```env
-# Basic Services
+# Server
 WS_PORT=3002
-HTTP_PORT=8080
+WS_HOST=0.0.0.0
 
-# DeepSeek AI (Text Response)
-DEEPSEEK_API_KEY=sk-your-key
+# AI Service (Required)
+DEEPSEEK_API_KEY=your-deepseek-api-key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_MODEL=deepseek-chat
 ENABLE_AI=true
 
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/opencochat
+# Database (Required for persistence)
+DATABASE_URL=postgresql://user:password@localhost:5432/opencode_chat
+ENABLE_DATABASE=true
 ```
 
-### Voice Features Configuration
+### Optional Configuration
 
 ```env
-# 1. Alibaba Cloud ASR - Real-time Speech Recognition (Voice → Text)
-DASHSCOPE_API_KEY=sk-your-dashscope-key
-ENABLE_TRANSCRIPTION=true
-
-# 2. Volcano Engine End-to-End Voice Model (AI Voice Response)
-VOLCANO_APP_ID=your-app-id
-VOLCANO_ACCESS_KEY=your-access-key
-VOLCANO_SECRET_KEY=your-secret-key
-VOLCANO_ENDPOINT=wss://openspeech.bytedance.com/api/v3/realtime/dialogue
-ENABLE_VOICE_AI=true
-```
-
-### File Storage Configuration
-
-```env
-# Alibaba Cloud OSS - AI Generated Files Storage
+# File Storage (Alibaba Cloud OSS)
 VITE_OSS_ACCESS_KEY_ID=your-access-key
 VITE_OSS_ACCESS_KEY_SECRET=your-secret-key
 VITE_OSS_BUCKET=your-bucket
 VITE_OSS_REGION=oss-cn-beijing
 ENABLE_OSS=true
+
+# Authentication (Supabase)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-key
+ENABLE_SUPABASE_AUTH=false
+ALLOW_ANONYMOUS=true
 ```
 
----
+For detailed deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-## 📖 Usage Guide
+## Usage Examples
 
-### Create Voice Chat Room
+### Creating a Chat Room
 
-1. Open `http://your-server:8080`
+1. Navigate to `http://your-server:3000`
 2. Click "New Session"
-3. Set room name and password (optional)
-4. Invite members to join
+3. Enter session name and configure settings
+4. Share the link with team members
 
-### AI Auto-Intervention
+### Using the AI Assistant
 
-When users discuss in voice chat, AI will:
-1. **Listen in real-time**: Convert voice to text via Alibaba Cloud ASR
-2. **Smart judgment**: Analyze content to decide whether to intervene
-3. **Choose response mode**:
-   - Suitable for discussion/explanation → **Voice Response** (Volcano Engine)
-   - Requires code/files → **Text Response + File Generation** (DeepSeek)
-
-### Trigger AI File Operations
-
-In chat, you can directly say to AI:
+The AI can be invoked with `@ai` mention:
 
 ```
-"@ai help me write a Python crawler script to scrape weather data"
-"@ai convert this code to JavaScript version"
-"@ai generate a project weekly report summarizing today's discussion"
+@ai How do I implement JWT authentication in Node.js?
+
+@ai Read the package.json file and suggest dependencies
+
+@ai Run npm test and show me the results
 ```
 
-AI will:
-1. Generate file content
-2. Automatically upload to OSS
-3. Send download link in chat
+### AI File Operations
 
----
-
-## 🎯 Feature Details
-
-### 1. Alibaba Cloud ASR Real-time Speech Recognition
-
-- **Real-time transcription**: Convert voice to text while user speaks
-- **Streaming recognition**: Recognize as you speak, low latency
-- **Chinese optimized**: Optimized for Chinese speech
-
-Documentation: [skill/aliyun/README.md](skill/aliyun/README.md)
-
-### 2. Volcano Engine End-to-End Voice Model
-
-- **End-to-end voice dialogue**: Direct voice interaction without text relay
-- **Natural voice**: Doubao model with natural and fluent voice
-- **Low latency**: Response time < 1 second
-
-Documentation: [skill/volcano-voice-ai-integration.md](skill/volcano-voice-ai-integration.md)
-
-### 3. AI File Generation & Download
-
-Supported file types:
-- Code files (.js, .py, .ts, .java, etc.)
-- Documents (.md, .txt, .doc)
-- Data files (.json, .csv, .xml)
-- Config files (.yml, .env, .conf)
-
-Files are automatically uploaded to Alibaba Cloud OSS with temporary download links, supporting:
-- Link expiration settings (default 1 hour)
-- File size limits (default 10MB)
-- Historical file management
-
----
-
-## 🛡️ Permission Management
-
-5-tier role system for fine-grained control of AI and user permissions:
-
-| Role | Permissions |
-|------|-------------|
-| **Owner** | Full permissions, including delete room |
-| **Admin** | Manage members, configure AI behavior |
-| **Member** | Normal chat, use AI features |
-| **Guest** | Chat only, no AI access |
-| **AI** | System role, auto-reply |
-
-Configurable permissions:
-- Whether to allow AI intervention
-- AI intervention mode (voice/text/mixed)
-- Whether to allow AI file generation
-- File download permissions
-
----
-
-## 📁 Project Structure
+The AI assistant can interact with your project files:
 
 ```
-opencochat/
-├── multiplayer/
-│   ├── websocket-server.ts      # WebSocket service core
-│   ├── voice-chat-service.ts    # Multiplayer voice chat management
-│   ├── transcription.ts         # Alibaba Cloud ASR integration
-│   ├── voice-ai-service.ts      # Volcano Engine voice model integration
-│   ├── ai-service.ts            # DeepSeek AI integration
-│   ├── file-sync.ts             # File generation & OSS upload
-│   └── tools/
-│       ├── file-tools.ts        # AI file operation tools
-│       └── terminal-tools.ts    # AI command execution tools
-├── public/
-│   └── index.html               # Frontend interface
-├── skill/
-│   ├── aliyun/                  # Alibaba Cloud RDS/OSS integration
-│   └── volcano-voice-ai-integration.md  # Volcano Engine integration docs
-└── docker-compose.yml
+@ai List all TypeScript files in the src directory
+
+@ai Read the utils/api.ts file and explain what it does
+
+@ai Create a new component based on the existing Button component
 ```
 
----
+### Conversation Summarization
 
-## 🤝 Contributing
+Click "Summarize Chat" to:
+- Get an AI-generated summary of the conversation
+- Include key topics, decisions, and action items
+- Save the summary for future reference
 
-Issues and Pull Requests are welcome!
+## Screenshots
+
+### Main Chat Interface
+![Chat Interface](https://opencode.ai/screenshots/chat-main.png)
+
+### AI Conversation with File Access
+![AI Chat](https://opencode.ai/screenshots/ai-conversation.png)
+
+### File Sharing & Collaboration
+![File Sharing](https://opencode.ai/screenshots/file-sharing.png)
+
+## Architecture
+
+Open CoChat is built with modern technologies:
+
+- **Runtime**: Bun for fast TypeScript execution
+- **Real-time**: WebSocket for instant message delivery
+- **Database**: PostgreSQL for reliable data persistence
+- **AI**: DeepSeek for intelligent responses
+- **Storage**: Alibaba Cloud OSS for file hosting
+- **Auth**: Supabase for user authentication
+
+### Project Structure
+
+```
+opencode-chat/
+├── multiplayer/           # Core chat functionality
+│   ├── websocket-server.ts    # WebSocket server
+│   ├── websocket-client.ts    # WebSocket client
+│   ├── ai-service.ts          # AI integration
+│   ├── tools/                 # AI tool implementations
+│   │   ├── file-tools.ts      # File operations
+│   │   └── terminal-tools.ts  # Command execution
+│   ├── database.ts            # Database layer
+│   └── types.ts               # TypeScript types
+├── public/               # Frontend assets
+├── docs/                 # Documentation
+├── scripts/              # Setup and build scripts
+└── marketing/            # Marketing resources
+```
+
+For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Use Cases
+
+### Development Teams
+- Code review with AI assistance
+- Pair programming with AI suggestions
+- Automated testing with AI result analysis
+- Documentation generation from discussions
+
+### Education
+- Study groups with AI tutors
+- Code explanations and learning
+- Collaborative problem solving
+- Knowledge base creation
+
+### Open Source Communities
+- Contributor onboarding with AI
+- Issue triage and categorization
+- Automated PR reviews
+- Community moderation
+
+### Business
+- Team collaboration and decision tracking
+- Customer support with AI escalation
+- Knowledge management
+- Meeting summaries and action items
+
+## Documentation
+
+- [Deployment Guide](docs/DEPLOYMENT.md) - Complete deployment instructions
+- [Contributing Guide](docs/CONTRIBUTING.md) - How to contribute
+- [Architecture](docs/ARCHITECTURE.md) - System architecture overview
+- [API Documentation](docs/API.md) - WebSocket API reference
+- [FAQ](docs/FAQ.md) - Frequently asked questions
+- [Changelog](CHANGELOG.md) - Version history and changes
+
+## Comparison
+
+| Feature | Open CoChat | Slack | Discord | Claude |
+|---------|---------------|-------|---------|--------|
+| Open Source | ✅ | ❌ | ❌ | ✅ |
+| Self-Hostable | ✅ | ❌ | ❌ | ❌ |
+| AI with File Access | ✅ | ❌ | ❌ | ❌ |
+| AI Command Execution | ✅ | ❌ | ❌ | ❌ |
+| Multiplayer Chat | ✅ | ✅ | ✅ | ❌ |
+| File Sharing | ✅ | ✅ | ✅ | ❌ |
+| Voice Messages | ✅ | ✅ | ✅ | ❌ |
+| Custom Roles | ✅ | ✅ | ✅ | ❌ |
+| Free & Self-Hosted | ✅ | ❌ | ✅ | ❌ |
+
+## Contributing
+
+We welcome contributions from everyone!
 
 ```bash
-git clone https://github.com/puckguo/opencochat.git
-cd opencochat
+# Fork and clone the repository
+git clone https://github.com/YOUR_USERNAME/opencode-chat.git
+cd opencode-chat
+
+# Install dependencies
 bun install
+
+# Run development server
 bun run dev
+
+# Run tests
+bun test
 ```
 
+Please read [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on our code of conduct and development workflow.
+
+## Roadmap
+
+- [ ] Mobile apps (iOS, Android)
+- [ ] End-to-end encryption
+- [ ] Video/audio calling
+- [ ] Plugin system for custom AI tools
+- [ ] Advanced AI agents with specialized roles
+- [ ] Multi-language UI support
+- [ ] Theme customization
+- [ ] Public API for third-party integration
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [DeepSeek](https://www.deepseek.com/) for providing powerful AI capabilities
+- [Bun](https://bun.sh/) for the incredibly fast JavaScript runtime
+- [Supabase](https://supabase.com/) for authentication infrastructure
+- [Alibaba Cloud](https://www.alibabacloud.com/) for OSS storage services
+
+## Support
+
+- Documentation: [docs.opencode.chat](https://docs.opencode.chat)
+- Discord: [discord.gg/opencode](https://discord.gg/opencode)
+- Email: support@opencode.chat
+- Issues: [GitHub Issues](https://github.com/opencode-chat/opencode-chat/issues)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=opencode-chat/opencode-chat&type=Date)](https://star-history.com/#opencode-chat/opencode-chat&Date)
+
 ---
 
-## 📄 License
-
-MIT License - See [LICENSE](LICENSE)
-
----
-
-## 🙏 Acknowledgments
-
-- [DeepSeek](https://www.deepseek.com/) - Text AI capabilities
-- [Alibaba Cloud DashScope](https://dashscope.aliyun.com/) - Real-time speech recognition
-- [Volcano Engine](https://www.volcengine.com/) - End-to-end voice model
-- [Alibaba Cloud OSS](https://www.aliyun.com/product/oss) - File storage
+Made with ❤️ by the Open CoChat community

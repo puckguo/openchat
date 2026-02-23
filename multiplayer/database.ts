@@ -99,6 +99,10 @@ export class DatabaseManager {
     }
   }
 
+  getClient() {
+    return this.client
+  }
+
   private async initializeTables(): Promise<void> {
     if (!this.client) return
 
@@ -198,6 +202,129 @@ export class DatabaseManager {
       console.log("[Database] Added updated_at column to messages")
     } catch (e) {
       // Column might already exist
+    }
+
+    // Fix: Alter avatar column to TEXT for storing base64 images
+    try {
+      await this.client.query(`
+        ALTER TABLE users ALTER COLUMN avatar TYPE TEXT
+      `)
+      console.log("[Database] Altered avatar column to TEXT")
+    } catch (e) {
+      // Column might already be TEXT or table doesn't exist
+    }
+
+    // ==========================================================================
+    // User System Tables
+    // ==========================================================================
+
+    // Users table
+    await this.client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        phone VARCHAR(20) UNIQUE,
+        username VARCHAR(100) NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        salt VARCHAR(64) NOT NULL,
+        avatar TEXT,
+        display_name VARCHAR(100),
+        bio TEXT,
+        status VARCHAR(20) DEFAULT 'active',
+        email_verified BOOLEAN DEFAULT FALSE,
+        phone_verified BOOLEAN DEFAULT FALSE,
+        last_login_at TIMESTAMP,
+        login_count INTEGER DEFAULT 0,
+        preferences JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP
+      )
+    `)
+
+    // User sessions association table
+    await this.client.query(`
+      CREATE TABLE IF NOT EXISTS user_sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+        session_id VARCHAR(255) REFERENCES sessions(id) ON DELETE CASCADE,
+        device_id VARCHAR(255),
+        last_joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        join_count INTEGER DEFAULT 1,
+        is_favorite BOOLEAN DEFAULT FALSE,
+        nickname VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, session_id)
+      )
+    `)
+
+    // Auth tokens table
+    await this.client.query(`
+      CREATE TABLE IF NOT EXISTS auth_tokens (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+        token_hash VARCHAR(255) NOT NULL,
+        device_id VARCHAR(255),
+        device_info JSONB DEFAULT '{}',
+        ip_address VARCHAR(45),
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        is_revoked BOOLEAN DEFAULT FALSE
+      )
+    `)
+
+    // Device sessions table (track anonymous user sessions)
+    await this.client.query(`
+      CREATE TABLE IF NOT EXISTS device_sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        device_id VARCHAR(255) NOT NULL,
+        session_id VARCHAR(255) REFERENCES sessions(id) ON DELETE CASCADE,
+        user_id VARCHAR(255),
+        anonymous_user_id VARCHAR(255),
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        claimed_at TIMESTAMP,
+        UNIQUE(device_id, session_id)
+      )
+    `)
+
+    // Create user system indexes
+    await this.client.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+      CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+      CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+      CREATE INDEX IF NOT EXISTS idx_user_sessions_session_id ON user_sessions(session_id);
+      CREATE INDEX IF NOT EXISTS idx_user_sessions_device_id ON user_sessions(device_id);
+      CREATE INDEX IF NOT EXISTS idx_auth_tokens_user_id ON auth_tokens(user_id);
+      CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires_at ON auth_tokens(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_device_sessions_device_id ON device_sessions(device_id);
+      CREATE INDEX IF NOT EXISTS idx_device_sessions_user_id ON device_sessions(user_id);
+    `)
+
+    // Add user_id and device_id columns to participants table
+    try {
+      await this.client.query(`
+        ALTER TABLE participants ADD COLUMN IF NOT EXISTS user_id VARCHAR(255)
+      `)
+      await this.client.query(`
+        ALTER TABLE participants ADD COLUMN IF NOT EXISTS device_id VARCHAR(255)
+      `)
+      await this.client.query(`
+        ALTER TABLE participants ADD COLUMN IF NOT EXISTS is_registered BOOLEAN DEFAULT FALSE
+      `)
+      console.log("[Database] Added user_id, device_id, is_registered columns to participants")
+    } catch (e) {
+      // Columns might already exist
+    }
+
+    // Create index for participants user_id
+    try {
+      await this.client.query(`
+        CREATE INDEX IF NOT EXISTS idx_participants_user_id ON participants(user_id)
+      `)
+    } catch (e) {
+      // Index might already exist
     }
 
     console.log("[Database] Tables initialized")

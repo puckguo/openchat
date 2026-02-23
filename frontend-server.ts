@@ -5,14 +5,18 @@ const PORT = 8888;
 const PUBLIC_DIR = "./public";
 const WECHAT_DIR = "./public_wechatstyle";
 
-// 使用 SSL 文件夹的正式证书
-const CERT_PATH = "./SSL/www.puckg.xyz.pem";
+// WebSocket服务器地址（用于API代理）- 使用域名以匹配SSL证书
+const WS_SERVER_URL = process.env.WS_SERVER_URL || "https://www.puckg.xyz:3002";
+
+// 使用 SSL 文件夹的正式证书（完整证书链）
+const CERT_PATH = "./SSL/www.puckg.xyz_fullchain.crt";
 const KEY_PATH = "./SSL/www.puckg.xyz.key";
 
 console.log(`[Frontend] Starting HTTPS server on port ${PORT}`);
 console.log(`[Frontend] Serving: ${PUBLIC_DIR}`);
 console.log(`[Frontend] WeChat style: ${WECHAT_DIR} (via /wechat/)`);
 console.log(`[Frontend] Using certificate: ${CERT_PATH}`);
+console.log(`[Frontend] API proxy to: ${WS_SERVER_URL}`);
 
 serve({
   port: PORT,
@@ -27,11 +31,48 @@ serve({
 
     const headers = new Headers();
     headers.set("Access-Control-Allow-Origin", "*");
-    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    headers.set("Access-Control-Allow-Headers", "Content-Type");
+    headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
     if (req.method === "OPTIONS") {
       return new Response(null, { headers });
+    }
+
+    // API代理 - 将/api/请求转发到WebSocket服务器
+    if (path.startsWith("/api/")) {
+      try {
+        const targetUrl = `${WS_SERVER_URL}${path}${url.search}`;
+        console.log(`[Proxy] ${req.method} ${path} -> ${targetUrl}`);
+
+        const proxyHeaders = new Headers();
+        req.headers.forEach((value, key) => {
+          if (key.toLowerCase() !== "host") {
+            proxyHeaders.set(key, value);
+          }
+        });
+
+        const response = await fetch(targetUrl, {
+          method: req.method,
+          headers: proxyHeaders,
+          body: req.method !== "GET" && req.method !== "HEAD" ? await req.text() : undefined,
+        });
+
+        const responseHeaders = new Headers(response.headers);
+        responseHeaders.set("Access-Control-Allow-Origin", "*");
+        responseHeaders.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        responseHeaders.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+        return new Response(response.body, {
+          status: response.status,
+          headers: responseHeaders,
+        });
+      } catch (error) {
+        console.error(`[Proxy] Error:`, error);
+        return new Response(JSON.stringify({ error: "Proxy error" }), {
+          status: 502,
+          headers: { "Content-Type": "application/json", ...Object.fromEntries(headers) },
+        });
+      }
     }
 
     let baseDir: string;

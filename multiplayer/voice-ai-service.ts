@@ -68,6 +68,7 @@ export interface SharedVoiceAISession {
   isClosing?: boolean
   voiceType?: string  // 音色类型
   files?: Array<{name: string, content: string, type: 'text' | 'base64'}>  // 上下文文件
+  chatHistory?: Array<{role: 'user' | 'ai', text: string, userName?: string, timestamp?: string}>  // 聊天历史
   // 说话状态追踪
   speakingUserIds: Set<string>  // 当前正在说话的用户ID集合
   lastSpeakingHintTime: number  // 上次发送说话提示的时间
@@ -479,6 +480,7 @@ class VoiceAIService {
 
   /**
    * 发送历史记录和文件内容给AI作为上下文
+   * 注意：发送背景信息，不触发AI回复
    */
   private async sendContextToAI(session: VoiceAISession): Promise<void> {
     if (!session.volcanoWs || session.volcanoWs.readyState !== 1) return
@@ -486,7 +488,7 @@ class VoiceAIService {
     const { chatHistory, files } = session
 
     // 构建上下文提示
-    let contextPrompt = ''
+    let contextPrompt = '【背景上下文：以下是历史信息，仅作为参考，不需要回复】\n\n'
 
     // 添加文件内容
     if (files && files.length > 0) {
@@ -503,23 +505,23 @@ class VoiceAIService {
       }
     }
 
-    // 添加历史聊天记录
+    // 添加历史聊天记录，剔除唤醒词
     if (chatHistory && chatHistory.length > 0) {
       contextPrompt += '## 历史对话\n\n'
       for (const msg of chatHistory.slice(-20)) { // 最多20条历史记录
-        const role = msg.role === 'user' ? '用户' : 'AI'
-        contextPrompt += `${role}: ${msg.text}\n`
+        const role = msg.role === 'user' ? '用户' : 'AI助手'
+        // 剔除唤醒词，防止AI重复响应历史消息（单个会话没有自定义唤醒词）
+        const sanitizedText = this.stripWakeWordsFromHistory(msg.text)
+        contextPrompt += `${role}: ${sanitizedText}\n`
       }
-      contextPrompt += '\n请根据以上上下文，主动打个招呼或回复。\n'
+      contextPrompt += '\n'
     }
 
-    if (!contextPrompt) return
-
+    if (contextPrompt.length < 50) return // 只有默认提示，没有实际内容
 
     // 发送系统提示（使用系统角色，不触发AI回复）
     try {
-      // 注意：火山引擎可能不支持真正的system角色
-      // 我们通过明确的指令告诉AI不要回复
+      console.log('[VoiceAI] Sending background context to AI (wake words stripped):', contextPrompt.substring(0, 200) + '...')
       const message = BinaryProtocol.encodeClientEvent(
         EVENT_CHAT_TEXT_QUERY,
         session.volcanoSessionId,
@@ -531,6 +533,7 @@ class VoiceAIService {
         }
       )
       session.volcanoWs.send(message)
+      console.log('[VoiceAI] Background context sent to AI (no reply expected)')
     } catch (error) {
       console.error('[VoiceAI] Failed to send context:', error)
     }
@@ -655,13 +658,15 @@ class VoiceAIService {
 
   /**
    * 启动共享语音AI会话（第一个用户加入时调用）
+   * @param chatHistory 聊天历史，在会话开始时发送给AI
    */
   async startSharedSession(
     sessionId: string,
     initialUserId: string,
     initialUserName: string,
     voiceType?: string,
-    files?: Array<{name: string, content: string, type: 'text' | 'base64'}>
+    files?: Array<{name: string, content: string, type: 'text' | 'base64'}>,
+    chatHistory?: Array<{role: 'user' | 'ai', text: string, userName?: string, timestamp?: string}>
   ): Promise<boolean> {
     if (!this.enabled) {
       console.warn('[SharedVoiceAI] Service not enabled')
@@ -700,6 +705,8 @@ class VoiceAIService {
       aiTriggered: false,
       triggerText: '',
       wakeWordDetected: false,
+      // 聊天历史（在会话开始时发送）
+      chatHistory: chatHistory || [],
     }
 
     this.sharedSessions.set(sessionId, session)
@@ -858,61 +865,60 @@ class VoiceAIService {
   }
 
   /**
+   * 记录发送给AI的完整prompt（用于调试）
+   */
+  private logPromptToAI(source: string, content: string, metadata?: any): void {
+    // 调试日志已关闭
+  }
+
+  /**
+   * 从历史消息中移除唤醒词，防止AI重复响应
+   * @param text 原始文本
+   * @param customWakeWords 自定义唤醒词列表（可选）
+   */
+  private stripWakeWordsFromHistory(text: string, customWakeWords?: string[]): string {
+    let result = text
+
+    // 默认唤醒词及其替换（保留语义）
+    const defaultWakeWordReplacements: Array<{ pattern: RegExp; replacement: string }> = [
+      { pattern: /AI/gi, replacement: '智能助手' },
+      { pattern: /小爱/g, replacement: '小艾' },
+    ]
+
+    // 应用默认唤醒词替换
+    for (const { pattern, replacement } of defaultWakeWordReplacements) {
+      result = result.replace(pattern, replacement)
+    }
+
+    // 处理自定义唤醒词：直接剔除，不替换
+    if (customWakeWords && customWakeWords.length > 0) {
+      for (const wakeWord of customWakeWords) {
+        // 跳过已处理的默认唤醒词
+        if (['AI', 'ai', 'Ai', '小爱'].includes(wakeWord)) continue
+
+        // 直接剔除自定义唤醒词
+        const escaped = wakeWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const pattern = new RegExp(escaped, 'g')
+        result = result.replace(pattern, '')
+      }
+    }
+
+    return result.trim()
+  }
+
+  /**
    * 发送唤醒词context给AI
+   * 注意：聊天历史已在会话开始时发送，这里不再发送
+   * 火山引擎会自动处理ASR -> AI的流程
    */
   private async sendWakeWordContext(
     session: SharedVoiceAISession,
     chatHistory?: Array<{role: 'user' | 'ai', text: string, userName?: string, timestamp?: string}>
   ): Promise<void> {
-    if (!session.volcanoWs || session.volcanoWs.readyState !== 1) {
-      console.error('[SharedVoiceAI] Volcano WebSocket not ready, state:', session.volcanoWs?.readyState)
-      return
-    }
-
-    try {
-      // 构建context消息
-      let contextMessage = ''
-
-      // 添加完整的聊天记录（从服务器获取）
-      if (chatHistory && chatHistory.length > 0) {
-        contextMessage += '## 历史聊天记录\n'
-        // 只取最近的50条消息，避免超出长度限制
-        const recentHistory = chatHistory.slice(-50)
-        recentHistory.forEach(msg => {
-          const role = msg.role === 'ai' ? 'AI' : (msg.userName || '用户')
-          contextMessage += `${role}: ${msg.text}\n`
-        })
-        contextMessage += '\n'
-      }
-
-      // 添加最近的对话context（实时ASR结果）
-      if (session.recentTranscripts.length > 0) {
-        contextMessage += '## 最近语音对话\n'
-        session.recentTranscripts.forEach(t => {
-          contextMessage += `${t.userName}: ${t.text}\n`
-        })
-        contextMessage += '\n'
-      }
-
-      // 添加触发文本
-      if (session.triggerText) {
-        contextMessage += `## 当前问题\n${session.triggerText}\n\n请根据以上上下文回复。`
-      }
-
-      if (contextMessage) {
-        console.log('[SharedVoiceAI] Sending context to AI:', contextMessage.substring(0, 200) + '...')
-
-        const message = BinaryProtocol.encodeClientEvent(
-          EVENT_CHAT_TEXT_QUERY,
-          session.volcanoSessionId,
-          { content: contextMessage }
-        )
-        session.volcanoWs.send(message)
-        console.log('[SharedVoiceAI] Wake word context sent to AI')
-      }
-    } catch (error) {
-      console.error('[SharedVoiceAI] Error sending wake word context:', error)
-    }
+    // 聊天历史已在会话开始时发送，这里不再重复发送
+    // 火山引擎会自动处理ASR -> AI的流程
+    console.log('[SharedVoiceAI] Wake word triggered, but context already sent at session start')
+    return
   }
 
   /**
@@ -1397,33 +1403,55 @@ class VoiceAIService {
   }
 
   /**
-   * 发送上下文文件给共享AI会话
+   * 发送上下文（文件和聊天历史）给共享AI会话
+   * 在会话开始时调用，发送剔除唤醒词后的聊天历史
    */
   private async sendContextToAIShared(session: SharedVoiceAISession): Promise<void> {
     if (!session.volcanoWs || session.volcanoWs.readyState !== 1) return
 
-    const { files } = session
+    const { files, chatHistory } = session
 
-    // 如果没有文件，不发送
-    if (!files || files.length === 0) return
+    // 如果没有文件也没有聊天历史，不发送
+    if ((!files || files.length === 0) && (!chatHistory || chatHistory.length === 0)) return
 
     // 构建上下文提示
     let contextPrompt = ''
 
     // 添加文件内容
-    contextPrompt += '## 参考文件\n\n'
-    for (const file of files) {
-      contextPrompt += `### ${file.name}\n`
-      if (file.type === 'text') {
-        contextPrompt += file.content
-      } else if (file.type === 'base64') {
-        // base64内容作为二进制数据提示
-        contextPrompt += `[文件内容已编码，长度: ${file.content.length} 字符]`
+    if (files && files.length > 0) {
+      contextPrompt += '## 参考文件\n\n'
+      for (const file of files) {
+        contextPrompt += `### ${file.name}\n`
+        if (file.type === 'text') {
+          contextPrompt += file.content
+        } else if (file.type === 'base64') {
+          // base64内容作为二进制数据提示
+          contextPrompt += `[文件内容已编码，长度: ${file.content.length} 字符]`
+        }
+        contextPrompt += '\n\n'
       }
-      contextPrompt += '\n\n'
+    }
+
+    // 添加聊天历史（剔除唤醒词）
+    if (chatHistory && chatHistory.length > 0) {
+      contextPrompt += '## 历史聊天记录\n\n'
+      const recentHistory = chatHistory.slice(-20)  // 最多20条
+      recentHistory.forEach(msg => {
+        const role = msg.role === 'ai' ? 'AI助手' : (msg.userName || '用户')
+        // 剔除唤醒词
+        const sanitizedText = this.stripWakeWordsFromHistory(msg.text, session.customWakeWords)
+        contextPrompt += `${role}: ${sanitizedText}\n`
+      })
     }
 
     if (!contextPrompt) return
+
+    // 记录发送给AI的完整prompt
+    this.logPromptToAI('sendContextToAIShared (会话开始)', contextPrompt, {
+      sessionId: session.sessionId,
+      fileCount: files?.length || 0,
+      historyCount: chatHistory?.length || 0
+    })
 
     // 发送系统提示
     try {
@@ -1437,7 +1465,7 @@ class VoiceAIService {
         }
       )
       session.volcanoWs.send(message)
-      console.log('[SharedVoiceAI] Context files sent:', files?.map(f => f.name).join(', '))
+      console.log('[SharedVoiceAI] Context sent at session start: files=', files?.length || 0, ', history=', chatHistory?.length || 0)
     } catch (error) {
       console.error('[SharedVoiceAI] Failed to send context:', error)
     }
